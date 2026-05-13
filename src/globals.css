@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "../../design-system-main/src/styles/theme.css";
+
+@source "../../design-system-main/src";
+
+@plugin "tailwindcss-animate";
+@plugin "tailwindcss-react-aria-components";
