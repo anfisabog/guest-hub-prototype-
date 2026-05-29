@@ -168,7 +168,7 @@ const BW_NAV: NavItem[] = [
   ]},
 ]
 
-function BWLeftNav({ activeId, onSelect, actionsVariant, onToggleVariant }: { activeId: string; onSelect: (id: string) => void; actionsVariant: 'A' | 'B' | 'C'; onToggleVariant: (v: 'A' | 'B' | 'C') => void }) {
+function BWLeftNav({ activeId, onSelect }: { activeId: string; onSelect: (id: string) => void }) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
   const toggleGroup = (id: string) => setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }))
@@ -1082,14 +1082,9 @@ function ListingStatusTag({ status }: { status: string }) {
   )
 }
 
-export function ListingsSection({ actionsVariant = 'A', onDirty, initialTask }: { actionsVariant?: 'A' | 'B' | 'C'; onDirty?: () => void; initialTask?: string | null }) {
-  const getTaskListings = () => {
-    if (initialTask === '3') return MOCK_LISTINGS_DATA.filter(l => TASK_2_3_IDS.includes(l.id))
-    if (initialTask === '4') return MOCK_LISTINGS_DATA.filter(l => TASK_4_IDS.includes(l.id))
-    return []
-  }
-  const [state, setState] = useState<'empty' | 'loading' | 'filled'>(() => getTaskListings().length > 0 ? 'filled' : 'empty')
-  const [listings, setListings] = useState<typeof MOCK_LISTINGS_DATA>(getTaskListings)
+export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
+  const [state, setState] = useState<'empty' | 'loading' | 'filled'>('empty')
+  const [listings, setListings] = useState<typeof MOCK_LISTINGS_DATA>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState('')
   const [statusSort, setStatusSort] = useState<'none' | 'live-first' | 'draft-first'>('none')
@@ -1117,35 +1112,6 @@ export function ListingsSection({ actionsVariant = 'A', onDirty, initialTask }: 
     })
   }, [listings, listingTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Useberry task completion detection ────────────────────────────────────
-  // 1.8s delay so user sees the toast/confirmation before URL changes.
-  // Useberry detects task completion via the URL change to task-N-complete.html.
-  useEffect(() => {
-    if (!initialTask) return
-    const base = (import.meta as unknown as { env: { BASE_URL: string } }).env.BASE_URL
-    // pushState changes URL without reloading — page stays visible, Useberry detects the URL change
-    const complete = (n: string) => setTimeout(() => {
-      history.pushState({}, '', `${base}?task=${n}-complete`)
-      // Useberry uses MutationObserver on body — checks location.href on each DOM mutation.
-      // pushState alone doesn't mutate the DOM, so we tickle it with a dummy node.
-      const el = document.createElement('span')
-      document.body.appendChild(el)
-      document.body.removeChild(el)
-    }, 50)
-    if (initialTask === '1' && listings.length === MOCK_LISTINGS_DATA.length) {
-      complete('1')
-    } else if (initialTask === '2' &&
-      SEA_VIEW_IDS.every(id => listings.some(l => l.id === id)) &&
-      listings.every(l => l.tags.some(t => t.label === 'Sea view'))) {
-      complete('2')
-    } else if (initialTask === '3' && (state === 'empty' || listings.length <= TASK_2_3_IDS.length - 5)) {
-      complete('3')
-    } else if (initialTask === '4' &&
-      listings.length === TASK_4_IDS.length + 9 &&
-      listings.filter(l => getCountry(l.location) === 'Italy').length === 9) {
-      complete('4')
-    }
-  }, [listings, state]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [showToast, setShowToast] = useState(false)
   const [toastVisible, setToastVisible] = useState(false)
@@ -1601,11 +1567,10 @@ function PlaceholderContent({ title }: { title: string }) {
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
-export function BookingWebsiteEditor({ site, onBack, task }: { site: BookingWebsite; onBack: () => void; task?: string | null }) {
+export function BookingWebsiteEditor({ site, onBack }: { site: BookingWebsite; onBack: () => void }) {
   const [activeSection, setActiveSection] = useState('listings')
   const [isDirty, setIsDirty] = useState(false)
   const [status, setStatus] = useState<BWStatus>(site.status)
-  const [actionsVariant, setActionsVariant] = useState<'A' | 'B' | 'C'>('C')
 
   const iconBtn = 'flex h-8 w-8 items-center justify-center rounded-lg text-[#a4a7ae] hover:text-[#667085] hover:bg-[#f9fafb] transition-colors'
 
@@ -1679,7 +1644,7 @@ export function BookingWebsiteEditor({ site, onBack, task }: { site: BookingWebs
 
         {/* Body */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          <BWLeftNav activeId={activeSection} onSelect={setActiveSection} actionsVariant={actionsVariant} onToggleVariant={(v) => setActionsVariant(v)} />
+          <BWLeftNav activeId={activeSection} onSelect={setActiveSection} />
 
           <div className={cn(
             'min-h-0 min-w-0 flex-1 px-8',
@@ -1692,7 +1657,7 @@ export function BookingWebsiteEditor({ site, onBack, task }: { site: BookingWebs
                 <DesignSection />
               </div>
             )}
-            {activeSection === 'listings' && <ListingsSection actionsVariant={actionsVariant} onDirty={() => setIsDirty(true)} initialTask={task} />}
+            {activeSection === 'listings' && <ListingsSection onDirty={() => setIsDirty(true)} />}
             {activeSection.startsWith('pages-') && <PlaceholderContent title="Pages" />}
             {activeSection.startsWith('settings-') && <PlaceholderContent title="Settings" />}
             {activeSection.startsWith('translations-') && <PlaceholderContent title="Translations" />}
