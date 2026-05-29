@@ -39,7 +39,7 @@ const iconProps = {
 
 function BrandMark() {
   return (
-    <img src="/logo.png" alt="Logo" className="size-8 shrink-0 rounded-lg object-cover" />
+    <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="size-8 shrink-0 rounded-lg object-cover" />
   )
 }
 
@@ -73,7 +73,7 @@ export function PrimarySidebar({ activeIndex = 4, onSelectItem }: PrimarySidebar
                   aria-current={active ? 'page' : undefined}
                   onClick={() => onSelectItem?.(index)}
                   className={cn(
-                    'flex size-10 shrink-0 items-center justify-center overflow-hidden transition-colors pointer-events-none',
+                    'flex size-10 shrink-0 items-center justify-center overflow-hidden transition-colors',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fd853a] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--figma-bg)]',
                     /* Figma: active = 40×40 rounded-xl white + shadow; inactive = rounded-md (6px) + 8px padding */
                     active

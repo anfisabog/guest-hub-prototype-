@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react'
+import { ListingsSection as BWListingsSection } from './BookingWebsiteEditor'
 import { useNavigate } from 'react-router-dom'
 import { PageShell, PageHeader } from '@/components/channel-manager'
 import { Button } from '@/components/ui'
@@ -52,8 +53,6 @@ type Portal = {
 
 const INITIAL_PORTALS: Portal[] = [
   { id: '1', name: 'Default Guest Portal', listings: 8, lastEdited: 'Apr 24, 2026', status: 'Published' },
-  { id: '2', name: 'Luxury Properties',    listings: 3, lastEdited: 'Apr 18, 2026', status: 'Draft' },
-  { id: '3', name: 'Budget Stays',         listings: 5, lastEdited: 'Mar 30, 2026', status: 'Draft' },
 ]
 
 type AccessType = 'smart_lock' | 'manual_code' | 'key_handoff' | null
@@ -91,6 +90,7 @@ const STAGES = [
   { id: 'check-in',     label: 'Check-in' },
   { id: 'during-stay',  label: 'During stay' },
   { id: 'checkout',     label: 'Checkout' },
+  { id: 'upsells',      label: 'Upsells' },
 ]
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
@@ -410,7 +410,6 @@ function PortalListView({ portals, onNew, onRowClick, showHeader = true }: {
       {showHeader && (
         <div className="flex items-center justify-between border-b border-[#e9eaeb] px-6 py-3 shrink-0">
           <span className="text-[20px] font-semibold leading-[30px] text-[#181d27]">Guest portals</span>
-          <Button variant="primary" onClick={onNew}>New portal</Button>
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
@@ -620,6 +619,20 @@ function PreviewFrame({
                 </div>
               )}
             </div>
+          ) : stage === 'upsells' ? (
+            <div className="flex flex-col px-4 pt-4 gap-2">
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-[#98a2b3] mb-1">Available add-ons</p>
+              {[
+                { label: 'Early check-in', price: '$25' },
+                { label: 'Late checkout',  price: '$30' },
+                { label: 'Airport transfer', price: '$60' },
+              ].map((u, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg border border-[#e9eaeb] bg-[#fafafa] px-2.5 py-2">
+                  <span className="text-[9px] text-[#181d27]">{u.label}</span>
+                  <span className="text-[9px] font-semibold text-[#181d27]">{u.price}</span>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f2f4f7]">
@@ -708,6 +721,249 @@ function GuestHubWizardShell({ onExit, onComplete }: { onExit: () => void; onCom
 
 // ─── Variant A: Tabs layout ───────────────────────────────────────────────────
 
+// ─── Guide types ─────────────────────────────────────────────────────────────
+
+type GuideStep    = { id: string; text: string }
+type ListingGuide = { videoUrl: string; steps: GuideStep[]; hostNote: string }
+
+// ─── Guide preview frame (no stage switcher, shows arrival guide only) ────────
+
+function GuidePreviewFrame({ guide, listingName }: { guide: ListingGuide; listingName: string }) {
+  const [previewTab, setPreviewTab] = useState<'steps' | 'video'>('steps')
+  const hasVideo    = guide.videoUrl.trim().length > 0
+  const filledSteps = guide.steps.filter(s => s.text.trim())
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative w-[200px] h-[432px] rounded-[38px] border-[6px] border-[#1c2939] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.18),0_4px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-7 bg-[#181d27]" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[72px] h-[18px] bg-[#1c2939] rounded-full z-10" />
+        <div className="absolute inset-0 top-7 bottom-5 overflow-y-auto bg-white">
+          {/* Header */}
+          <div className="bg-[#181d27] px-3 pt-1 pb-5">
+            <p className="text-[7px] text-white/50 mb-0.5 truncate">{listingName}</p>
+            <p className="text-[13px] font-semibold text-white leading-tight">Check-in instructions</p>
+          </div>
+          {/* Rounded bridge */}
+          <div className="-mt-3 rounded-t-2xl bg-white pt-3">
+            {/* Tab switcher — only when video URL is set */}
+            {hasVideo && (
+              <div className="flex border-b border-[#e9eaeb] mx-3">
+                {(['steps', 'video'] as const).map(t => (
+                  <button key={t} onClick={() => setPreviewTab(t)}
+                    className={cn(
+                      'flex-1 py-1.5 text-[9px] font-medium capitalize transition-colors',
+                      previewTab === t ? 'border-b-2 border-[#15b8b0] text-[#15b8b0]' : 'text-[#98a2b3]'
+                    )}>
+                    {t === 'steps' ? 'Steps' : 'Video'}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Content */}
+            <div className="px-3 py-3 flex flex-col gap-2.5">
+              {(!hasVideo || previewTab === 'steps') ? (
+                filledSteps.length === 0 ? (
+                  <p className="text-[9px] text-[#98a2b3] text-center py-6">Add steps to see preview</p>
+                ) : (
+                  <>
+                    {filledSteps.map((step, i) => (
+                      <div key={step.id} className="flex gap-2">
+                        <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#181d27] text-[7px] font-bold text-white mt-0.5">
+                          {i + 1}
+                        </div>
+                        <p className="text-[9px] text-[#181d27] leading-relaxed flex-1">{step.text}</p>
+                      </div>
+                    ))}
+                    {guide.hostNote.trim() && (
+                      <div className="mt-1 rounded-lg bg-[#f2f1ed] px-2.5 py-2">
+                        <p className="text-[7px] font-semibold text-[#535861] mb-0.5 uppercase tracking-wide">Note from host</p>
+                        <p className="text-[9px] text-[#181d27] leading-relaxed">{guide.hostNote}</p>
+                      </div>
+                    )}
+                  </>
+                )
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <div className="rounded-lg bg-[#181d27] aspect-video w-full flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white" opacity="0.7"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                  <p className="text-[8px] text-[#98a2b3] break-all leading-tight">{guide.videoUrl}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[56px] h-[3px] bg-[#1c2939]/70 rounded-full" />
+      </div>
+    </div>
+  )
+}
+
+// ─── Guides section ───────────────────────────────────────────────────────────
+
+function GuidesSection() {
+  const portalListings = MOCK_LISTINGS.filter(l => l.currentPortal === 'Default Guest Portal')
+  const [activeListingId, setActiveListingId] = useState<string>(portalListings[0]?.id ?? '')
+
+  const [guides, setGuides] = useState<Record<string, ListingGuide>>(() => {
+    const init: Record<string, ListingGuide> = {}
+    portalListings.forEach(l => {
+      init[l.id] = { videoUrl: '', steps: [{ id: 'init', text: '' }], hostNote: '' }
+    })
+    return init
+  })
+
+  const activeListing = portalListings.find(l => l.id === activeListingId)
+  const guide = guides[activeListingId] ?? { videoUrl: '', steps: [{ id: 'init', text: '' }], hostNote: '' }
+
+  const updateGuide = (patch: Partial<ListingGuide>) =>
+    setGuides(g => ({ ...g, [activeListingId]: { ...guide, ...patch } }))
+
+  const addStep = () =>
+    updateGuide({ steps: [...guide.steps, { id: String(Date.now()), text: '' }] })
+
+  const removeStep = (id: string) =>
+    updateGuide({ steps: guide.steps.filter(s => s.id !== id) })
+
+  const updateStep = (id: string, text: string) =>
+    updateGuide({ steps: guide.steps.map(s => s.id === id ? { ...s, text } : s) })
+
+  const lbl     = 'w-[140px] shrink-0 text-[14px] leading-5 text-[#535862]'
+  const inputCls = 'w-full rounded-lg border border-[#d5d7da] px-3 py-2 text-[14px] text-[#101828] outline-none focus:ring-2 focus:ring-[#15b8b0] focus:border-[#15b8b0]'
+  const divider  = <div className="h-px bg-[#e9eaeb]" />
+
+  return (
+    <div className="flex flex-1 min-h-0 overflow-hidden">
+
+      {/* Left: listing nav */}
+      <div className="w-[220px] shrink-0 border-r border-[#e9eaeb] flex flex-col overflow-hidden">
+        <div className="px-4 py-3 border-b border-[#e9eaeb] shrink-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a2b3]">Check-in instructions</p>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2 px-2">
+          {portalListings.length === 0 ? (
+            <p className="text-[12px] text-[#98a2b3] px-3 py-4 text-center">No properties in this portal yet.</p>
+          ) : portalListings.map(l => {
+            const g = guides[l.id]
+            const hasContent = g && (g.steps.some(s => s.text.trim()) || g.videoUrl.trim() || g.hostNote.trim())
+            return (
+              <button key={l.id} onClick={() => setActiveListingId(l.id)}
+                className={cn(
+                  'w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-2 transition-colors',
+                  activeListingId === l.id
+                    ? 'bg-[var(--channel-accent-surface)] text-[#181d27] font-medium'
+                    : 'text-[#535862] hover:bg-[#f9fafb]'
+                )}>
+                <div className={cn('h-1.5 w-1.5 rounded-full shrink-0', hasContent ? 'bg-[#17b26a]' : 'bg-[#d0d5dd]')} />
+                <span className="truncate text-[13px]">{l.name}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Center: form */}
+      <div className="flex-1 min-w-0 overflow-y-auto px-8 py-8">
+        {activeListing ? (
+          <div className="max-w-[520px] flex flex-col gap-6">
+            <div className="-mb-2">
+              <h3 className="text-[16px] font-semibold text-[#101828]">{activeListing.name}</h3>
+            </div>
+            {divider}
+
+            {/* Video URL */}
+            <div className="flex gap-4 items-start">
+              <p className={lbl}>Video URL</p>
+              <div className="flex-1 flex flex-col gap-1.5">
+                <input
+                  type="url"
+                  value={guide.videoUrl}
+                  onChange={e => updateGuide({ videoUrl: e.target.value })}
+                  placeholder="https://youtube.com/..."
+                  className={inputCls}
+                />
+                <p className="text-[12px] text-[#98a2b3]">YouTube, Vimeo or direct MP4. Shown as a tab in the guide.</p>
+              </div>
+            </div>
+
+            {divider}
+
+            {/* Steps */}
+            <div className="flex gap-4 items-start">
+              <div className="w-[140px] shrink-0 flex flex-col gap-1 pt-1">
+                <p className="text-[14px] leading-5 text-[#535862]">Steps</p>
+                <p className="text-[12px] text-[#98a2b3] leading-relaxed">Step-by-step check-in instructions</p>
+              </div>
+              <div className="flex-1 flex flex-col gap-2">
+                {guide.steps.map((step, i) => (
+                  <div key={step.id} className="flex items-start gap-2">
+                    <div className="mt-2.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f2f4f7] text-[10px] font-semibold text-[#667085]">
+                      {i + 1}
+                    </div>
+                    <textarea
+                      value={step.text}
+                      onChange={e => updateStep(step.id, e.target.value)}
+                      placeholder={`Step ${i + 1}…`}
+                      rows={2}
+                      className="flex-1 resize-none rounded-lg border border-[#d5d7da] px-3 py-2 text-[14px] text-[#101828] outline-none focus:ring-2 focus:ring-[#15b8b0] focus:border-[#15b8b0]"
+                    />
+                    {guide.steps.length > 1 && (
+                      <button type="button" onClick={() => removeStep(step.id)}
+                        className="mt-2.5 flex h-5 w-5 items-center justify-center rounded text-[#98a2b3] hover:text-[#667085] hover:bg-[#f9fafb] transition-colors shrink-0">
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" onClick={addStep}
+                  className="self-start mt-1 flex items-center gap-1.5 text-[13px] font-medium text-[#15b8b0] hover:text-[#0ea5a0] transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Add step
+                </button>
+              </div>
+            </div>
+
+            {divider}
+
+            {/* Host note */}
+            <div className="flex gap-4 items-start">
+              <div className="w-[140px] shrink-0 flex flex-col gap-1 pt-1">
+                <p className="text-[14px] leading-5 text-[#535862]">Host note</p>
+                <p className="text-[12px] text-[#98a2b3] leading-relaxed">Optional note at bottom of steps</p>
+              </div>
+              <textarea
+                value={guide.hostNote}
+                onChange={e => updateGuide({ hostNote: e.target.value })}
+                placeholder="e.g. If you have any trouble, call me directly."
+                rows={3}
+                className="flex-1 resize-none rounded-lg border border-[#d5d7da] px-3 py-2 text-[14px] text-[#101828] outline-none focus:ring-2 focus:ring-[#15b8b0] focus:border-[#15b8b0]"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-[14px] text-[#98a2b3]">No properties assigned to this portal.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Right: preview */}
+      <div className="w-[280px] shrink-0 border-l border-[#e9eaeb] overflow-y-auto px-5 py-5 flex flex-col gap-4 bg-[#f9fafb]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a2b3] shrink-0">Preview</p>
+        {activeListing && <GuidePreviewFrame guide={guide} listingName={activeListing.name} />}
+      </div>
+
+    </div>
+  )
+}
+
+// ─── Outer tabs ───────────────────────────────────────────────────────────────
+
 type GHTab = 'guest-portal' | 'guides' | 'integrations'
 
 function GuestHubTabsLayout({ portals, onNewPortal, onPortalRowClick, onOpenWizard }: {
@@ -718,9 +974,7 @@ function GuestHubTabsLayout({ portals, onNewPortal, onPortalRowClick, onOpenWiza
 }) {
   const [tab, setTab] = useState<GHTab>('guest-portal')
 
-  const headerEnd = tab === 'guest-portal' ? (
-    <Button variant="primary" onClick={onNewPortal}>New portal</Button>
-  ) : null
+  const headerEnd = null
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -744,9 +998,7 @@ function GuestHubTabsLayout({ portals, onNewPortal, onPortalRowClick, onOpenWiza
             : <PortalListView portals={portals} onNew={onNewPortal} onRowClick={onPortalRowClick} showHeader={false} />
         )}
         {tab === 'guides' && (
-          <div className="flex flex-1 items-center justify-center text-[14px] text-[#717680]">
-            Guides — coming soon
-          </div>
+          <GuidesSection />
         )}
         {tab === 'integrations' && (
           <div className="flex flex-1 items-center justify-center text-[14px] text-[#717680]">
@@ -2392,19 +2644,19 @@ function PlaceholderSection({ title, sections }: {
 // ─── Portal editor nav (spec order: fixed, do not change) ────────────────────
 
 const PORTAL_NAV = [
+  { id: 'properties',       label: 'Listings',             icon: List        },
   { id: 'branding',         label: 'Branding',             icon: HomeLine    },
   { id: 'check-in',         label: 'Check-in',             icon: FileCheck01 },
   { id: 'access-controls',  label: 'Access controls',      icon: Lock01      },
   { id: 'security',         label: 'Security',             icon: Shield01    },
   { id: 'payments',         label: 'Billing',              icon: CreditCard01},
-  { id: 'listings',         label: 'Listings',             icon: List        },
   { id: 'preview',          label: 'Preview & Share',      icon: Eye         },
 ]
 
 // ─── Portal editor ────────────────────────────────────────────────────────────
 
 function GuestPortalEditor({ portal, onBack }: { portal: Portal; onBack: () => void }) {
-  const [activeSection, setActiveSection] = useState('branding')
+  const [activeSection, setActiveSection] = useState('properties')
   const [isDirty, setIsDirty] = useState(false)
   const [status, setStatus] = useState<PortalStatus>(portal.status)
   const [completed] = useState<Record<string, boolean>>({ branding: true })
@@ -2566,8 +2818,8 @@ function GuestPortalEditor({ portal, onBack }: { portal: Portal; onBack: () => v
                   { title: 'Invoices', description: 'Customise invoice templates, numbering, and delivery settings for guest receipts.' },
                 ]} />
               )}
-              {activeSection === 'listings' && (
-                <ListingsSection onAssignedChange={setAssignedListingIds} />
+              {activeSection === 'properties' && (
+                <BWListingsSection />
               )}
               {activeSection === 'preview' && (
                 <PreviewShareSection
@@ -2677,29 +2929,6 @@ export function GuestHubPage() {
         )}
       </div>
 
-      {/* Layout toggle FAB */}
-      {!wizardActive && (
-        <button
-          onClick={() => setVariant(v => v === 'tabs' ? 'panel' : 'tabs')}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border border-[#e9eaeb] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#414651] shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:bg-[#f9fafb] transition-colors"
-        >
-          {variant === 'tabs' ? (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/>
-              </svg>
-              Panel view
-            </>
-          ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/>
-              </svg>
-              Tab view
-            </>
-          )}
-        </button>
-      )}
     </PageShell>
   )
 }
