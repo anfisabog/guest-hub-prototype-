@@ -2,16 +2,15 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// ⚠️  BEFORE DEPLOYING: replace 'YOUR-REPO-NAME' with your actual GitHub repo name
-//     e.g. if your repo is github.com/anfisign/booking-prototype → base: '/booking-prototype/'
-const GITHUB_REPO_NAME = 'listings-to-website-A'
+// GitHub repo name — must match exactly
+const DEPLOY_BASE = 'guest-hub-prototype-'
 
-export default defineConfig({
-  base: `/${GITHUB_REPO_NAME}/`,
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? `/${DEPLOY_BASE}/` : '/',
   plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-});
+}));
