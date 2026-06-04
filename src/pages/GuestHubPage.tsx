@@ -2905,7 +2905,7 @@ export function GuestHubPage() {
   // Editor view — full-width, replaces the hub frame
   if (editingPortal) {
     return (
-      <PageShell sidebarActiveIndex={9} onSidebarSelectItem={(i: number) => { if (i === 10) navigate('/booking-website'); else if (i !== 9) navigate('/') }}>
+      <PageShell sidebarActiveIndex={9} onSidebarSelectItem={undefined}>
         <GuestPortalEditor
           portal={editingPortal}
           onBack={() => setEditingPortal(null)}
@@ -2915,7 +2915,7 @@ export function GuestHubPage() {
   }
 
   return (
-    <PageShell sidebarActiveIndex={9} onSidebarSelectItem={(i: number) => { if (i === 10) navigate('/booking-website'); else if (i !== 9) navigate('/') }}>
+    <PageShell sidebarActiveIndex={9} onSidebarSelectItem={undefined}>
       <div className="flex-1 bg-white rounded-xl flex flex-col min-h-0 overflow-hidden border border-[#eceef2]">
         {wizardActive ? (
           <GuestHubWizardShell
