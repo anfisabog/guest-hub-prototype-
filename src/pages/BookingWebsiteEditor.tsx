@@ -1866,20 +1866,38 @@ export function ListingsSectionB({ onDirty }: { onDirty?: () => void }) {
       </div>
 
       {/* Floating selection bar */}
-      {selected.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl bg-[#0c111d] px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-          <span className="text-[14px] font-medium text-white whitespace-nowrap">{selected.size} selected</span>
-          <div className="w-px h-4 bg-white/20" />
-          <button type="button" onClick={() => bulkSetInclusion('included')} className="inline-flex items-center gap-2 rounded-lg bg-white hover:bg-[#f2f4f7] transition-colors px-3 py-1.5 text-[13px] font-medium text-[#181d27]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
-            Include
-          </button>
-          <button type="button" onClick={() => bulkSetInclusion('excluded')} className="inline-flex items-center gap-2 rounded-lg bg-white hover:bg-[#f2f4f7] transition-colors px-3 py-1.5 text-[13px] font-medium text-[#181d27]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M18 6L6 18M6 6l12 12"/></svg>
-            Exclude
-          </button>
-        </div>
-      )}
+      {selected.size > 0 && (() => {
+        const allIncluded = [...selected].every(id => inclusions[id] === 'included')
+        const allExcluded = [...selected].every(id => inclusions[id] === 'excluded')
+        return (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl bg-[#0c111d] px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
+            <span className="text-[14px] font-medium text-white whitespace-nowrap">{selected.size} selected</span>
+            <div className="w-px h-4 bg-white/20" />
+            <button
+              type="button"
+              onClick={() => bulkSetInclusion('included')}
+              disabled={allIncluded}
+              className={cn('inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors',
+                allIncluded ? 'bg-white/20 text-white/30 cursor-not-allowed' : 'bg-white hover:bg-[#f2f4f7] text-[#181d27]'
+              )}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+              Include
+            </button>
+            <button
+              type="button"
+              onClick={() => bulkSetInclusion('excluded')}
+              disabled={allExcluded}
+              className={cn('inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors',
+                allExcluded ? 'bg-white/20 text-white/30 cursor-not-allowed' : 'bg-white hover:bg-[#f2f4f7] text-[#181d27]'
+              )}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M18 6L6 18M6 6l12 12"/></svg>
+              Exclude
+            </button>
+          </div>
+        )
+      })()}
 
       {/* Toast */}
       {showToast && (
