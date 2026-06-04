@@ -1573,171 +1573,325 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
 
 // ─── Listings Section B ───────────────────────────────────────────────────────
 
-type ListingStatus = 'included' | 'excluded'
-
-function ListingsSectionB({ onDirty }: { onDirty?: () => void }) {
-  const [statuses, setStatuses] = useState<Record<string, ListingStatus>>(() =>
-    Object.fromEntries(MOCK_LISTINGS_DATA.map(l => [l.id, 'included']))
-  )
+export function ListingsSectionB({ onDirty }: { onDirty?: () => void }) {
+  const [state, setState] = useState<'empty' | 'loading' | 'filled'>('empty')
+  const [listings, setListings] = useState<typeof MOCK_LISTINGS_DATA>([])
+  const [inclusions, setInclusions] = useState<Record<string, 'included' | 'excluded'>>({})
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState('')
+  const [locationSort, setLocationSort] = useState<'none' | 'asc' | 'desc'>('none')
+  const [inclusionSort, setInclusionSort] = useState<'none' | 'included-first' | 'excluded-first'>('none')
+  const [filters, setFilters] = useState<ActiveFilters>(EMPTY_FILTERS)
+  const [showToast, setShowToast] = useState(false)
+  const [toastVisible, setToastVisible] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [modalExcludeIds, setModalExcludeIds] = useState<string[]>([])
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const filtered = MOCK_LISTINGS_DATA.filter(l =>
-    l.name.toLowerCase().includes(filter.toLowerCase())
-  )
-  const allSelected = filtered.length > 0 && filtered.every(l => selected.has(l.id))
-  const someSelected = filtered.some(l => selected.has(l.id))
-
-  const toggleAll = () => {
-    if (allSelected) setSelected(new Set())
-    else setSelected(new Set(filtered.map(l => l.id)))
+  const triggerToast = (msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToastMessage(msg)
+    setToastVisible(false)
+    setShowToast(true)
+    requestAnimationFrame(() => requestAnimationFrame(() => setToastVisible(true)))
+    toastTimerRef.current = setTimeout(() => {
+      setToastVisible(false)
+      setTimeout(() => setShowToast(false), 320)
+    }, 4000)
   }
-  const toggleOne = (id: string) => {
+
+  const dismissToast = () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToastVisible(false)
+    setTimeout(() => setShowToast(false), 320)
+  }
+
+  const handleAddAll = () => {
+    setState('loading')
+    setTimeout(() => {
+      setState('filled')
+      setListings(MOCK_LISTINGS_DATA)
+      setInclusions(Object.fromEntries(MOCK_LISTINGS_DATA.map(l => [l.id, 'included' as const])))
+      triggerToast(`${MOCK_LISTINGS_DATA.length} listings added`)
+    }, 1200)
+  }
+
+  const handleAddSpecific = (ids: string[]) => {
+    setShowModal(false)
+    setState('loading')
+    setTimeout(() => {
+      setState('filled')
+      setListings(prev => {
+        const existingIds = new Set(prev.map(l => l.id))
+        const newOnes = MOCK_LISTINGS_DATA.filter(l => ids.includes(l.id) && !existingIds.has(l.id))
+        setInclusions(prev2 => ({
+          ...prev2,
+          ...Object.fromEntries(newOnes.map(l => [l.id, 'included' as const]))
+        }))
+        triggerToast(newOnes.length === 1 ? '1 listing added' : `${newOnes.length} listings added`)
+        return [...prev, ...newOnes]
+      })
+    }, 1200)
+  }
+
+  const toggleSelect = (id: string) => {
     setSelected(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
   }
-  const toggleStatus = (id: string) => {
-    setStatuses(prev => ({ ...prev, [id]: prev[id] === 'included' ? 'excluded' : 'included' }))
+
+  const toggleInclusion = (id: string) => {
+    setInclusions(prev => ({ ...prev, [id]: prev[id] === 'included' ? 'excluded' : 'included' }))
     onDirty?.()
   }
-  const bulkSet = (status: ListingStatus) => {
-    setStatuses(prev => {
+
+  const bulkSetInclusion = (status: 'included' | 'excluded') => {
+    setInclusions(prev => {
       const next = { ...prev }
       selected.forEach(id => { next[id] = status })
       return next
     })
     setSelected(new Set())
+    triggerToast(`${selected.size} listing${selected.size !== 1 ? 's' : ''} ${status}`)
     onDirty?.()
   }
 
-  const includedCount = Object.values(statuses).filter(s => s === 'included').length
-  const selectedCount = selected.size
+  const listingCountries = [...new Set(listings.map(l => getCountry(l.location)))].sort((a, b) => a.localeCompare(b))
+  const listingCities = [...new Set(listings.map(l => l.location))].sort((a, b) => a.localeCompare(b))
+  const listingTags = [...new Set(listings.flatMap(l => l.tags.map(t => t.label)))].sort()
+  const listingCountryCounts = Object.fromEntries(listingCountries.map(c => [c, listings.filter(l => getCountry(l.location) === c).length]))
+  const listingCityCounts = Object.fromEntries(listingCities.map(loc => [loc, listings.filter(l => l.location === loc).length]))
+  const listingTagCounts = Object.fromEntries(listingTags.map(tag => [tag, listings.filter(l => l.tags.some(t => t.label === tag)).length]))
 
+  const cycleLocationSort = () => setLocationSort(s => s === 'none' ? 'asc' : s === 'asc' ? 'desc' : 'none')
+  const cycleInclusionSort = () => setInclusionSort(s => s === 'none' ? 'included-first' : s === 'included-first' ? 'excluded-first' : 'none')
+
+  const filtered = listings
+    .filter(l => {
+      const q = filter.toLowerCase()
+      const matchName = !q || l.name.toLowerCase().includes(q) || l.location.toLowerCase().includes(q)
+      const matchCountry = filters.countries.size === 0 || filters.countries.has(getCountry(l.location))
+      const matchCity = filters.cities.size === 0 || filters.cities.has(l.location)
+      const matchTag = filters.tags.size === 0 || [...filters.tags].every(tag => l.tags.some(t => t.label === tag))
+      return matchName && matchCountry && matchCity && matchTag
+    })
+    .sort((a, b) => {
+      if (locationSort !== 'none') {
+        const cmp = a.location.localeCompare(b.location)
+        return locationSort === 'asc' ? cmp : -cmp
+      }
+      if (inclusionSort !== 'none') {
+        const aInc = inclusions[a.id] === 'included'
+        const bInc = inclusions[b.id] === 'included'
+        if (inclusionSort === 'included-first') return aInc === bInc ? 0 : aInc ? -1 : 1
+        return aInc === bInc ? 0 : aInc ? 1 : -1
+      }
+      return 0
+    })
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every(l => selected.has(l.id))
+
+  const toggleAll = () => {
+    if (allFilteredSelected) {
+      setSelected(prev => { const next = new Set(prev); filtered.forEach(l => next.delete(l.id)); return next })
+    } else {
+      setSelected(prev => { const next = new Set(prev); filtered.forEach(l => next.add(l.id)); return next })
+    }
+  }
+
+  const header = (
+    <div className="flex items-center justify-between mb-4 shrink-0 min-h-[32px]">
+      <h3 className="text-[18px] font-semibold text-[#101828]">Listings</h3>
+    </div>
+  )
+
+  if (state === 'empty') return (
+    <div className="flex flex-col">
+      {header}
+      <div className="h-px bg-[#e9eaeb] mb-5" />
+      <div className="flex flex-col items-center justify-center rounded-xl border border-[#e9eaeb] bg-white py-14 px-8 relative overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[420px] h-[420px] rounded-full border border-[#f2f4f7] absolute" />
+          <div className="w-[300px] h-[300px] rounded-full border border-[#f2f4f7] absolute" />
+          <div className="w-[180px] h-[180px] rounded-full border border-[#f2f4f7] absolute" />
+        </div>
+        <div className="relative z-10 mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-[#e9eaeb] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.1)]">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </div>
+        <p className="relative z-10 text-[16px] font-semibold text-[#101828] mb-1">No listings have been added</p>
+        <p className="relative z-10 text-[14px] text-[#535862] text-center max-w-[340px] mb-6 leading-snug">
+          You currently have no listings added to your booking engine website. How would like to proceed?
+        </p>
+        <div className="relative z-10 flex items-center gap-3">
+          <Button variant="outline" onClick={() => { setModalExcludeIds([]); setShowModal(true) }}>Add specific listings</Button>
+          <Button onClick={handleAddAll}>Add all listings</Button>
+        </div>
+      </div>
+      {showModal && <ListingSelectorModal onClose={() => setShowModal(false)} onAdd={handleAddSpecific} excludeIds={modalExcludeIds} />}
+      {showToast && (
+        <div className={cn('fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-white border border-[#e9eaeb] shadow-[0_8px_24px_rgba(0,0,0,0.12)] px-4 py-3 min-w-[260px] transition-transform duration-300 ease-in-out', toastVisible ? 'translate-x-0' : 'translate-x-[calc(100%+24px)]')}>
+          <img src={`${import.meta.env.BASE_URL}Featured icon outline.svg`} alt="" className="w-[38px] h-[38px] shrink-0" />
+          <span className="text-[14px] font-medium text-[#181d27] flex-1">{toastMessage}</span>
+          <button onClick={dismissToast} className="text-[#98a2b3] hover:text-[#667085] transition-colors ml-1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
+  if (state === 'loading') return (
+    <div className="flex flex-col">
+      {header}
+      <div className="h-px bg-[#e9eaeb] mb-5" />
+      <div className="flex items-center justify-center py-20">
+        <svg className="animate-spin h-7 w-7 text-[#15b8b0]" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+        </svg>
+      </div>
+    </div>
+  )
+
+  // Filled state
   return (
-    <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
-      {/* Title row */}
-      <div className="flex items-center justify-between mb-4 shrink-0">
-        <h2 className="text-[18px] font-semibold text-[#101828]">
-          Listings
-          <span className="ml-2 text-[14px] font-normal text-[#717680]">({includedCount} included)</span>
-        </h2>
+    <div className="flex flex-col flex-1 min-h-0 relative">
+      {header}
+      <div className="h-px bg-[#e9eaeb] mb-5 shrink-0" />
+
+      <div className="flex gap-4 flex-1 min-h-0 items-stretch">
+      <div className="flex flex-col flex-1 min-w-0 rounded-xl border border-[#e9eaeb] overflow-hidden">
+        {/* Filter bar */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#e9eaeb] bg-white">
+          <div className="flex items-center gap-2 flex-wrap">
+            <FilterDropdown applied={filters} onApply={setFilters} availableCountries={listingCountries} availableCities={listingCities} availableTags={listingTags} countryCounts={listingCountryCounts} cityCounts={listingCityCounts} tagCounts={listingTagCounts} />
+            {(filters.countries.size + filters.cities.size + filters.tags.size) > 0 && (
+              <>
+                <div className="w-px h-5 bg-[#e9eaeb] shrink-0" />
+                {(['countries', 'cities', 'tags'] as const).flatMap(key =>
+                  [...filters[key]].map(value => (
+                    <span key={`${key}-${value}`} className="inline-flex items-center gap-1.5 rounded-md border border-[#d0d5dd] bg-white px-2.5 py-1.5 text-[13px] font-semibold text-[#344054] shadow-[0_1px_2px_rgba(10,13,18,0.05)]">
+                      {value}
+                      <button type="button" onClick={() => setFilters(prev => { const next = new Set(prev[key]); next.delete(value); return { ...prev, [key]: next } })} className="text-[#667085] hover:text-[#344054] transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                      </button>
+                    </span>
+                  ))
+                )}
+                <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="text-[13px] font-semibold text-[#667085] hover:text-[#344054] transition-colors whitespace-nowrap">Clear all</button>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-1.5 w-52">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#98a2b3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter name" className="flex-1 text-[13px] text-[#344054] placeholder-[#98a2b3] outline-none bg-transparent" />
+          </div>
+        </div>
+
+        {/* Table header */}
+        <div className="grid grid-cols-[20px_minmax(120px,2fr)_minmax(88px,1fr)_minmax(88px,1fr)_minmax(100px,1fr)] items-center gap-3 px-4 py-2.5 border-b border-[#e9eaeb] bg-[#fafafa]">
+          <Checkbox checked={allFilteredSelected} isIndeterminate={filtered.some(l => selected.has(l.id)) && !allFilteredSelected} onChange={toggleAll} />
+          <span className="text-[12px] font-semibold text-[#414651]">Name</span>
+          <span className="text-[12px] font-semibold text-[#414651] truncate">Country</span>
+          <button type="button" onClick={cycleLocationSort} className={cn('flex items-center gap-1 text-[12px] font-semibold truncate transition-colors', locationSort !== 'none' ? 'text-[#344054]' : 'text-[#414651] hover:text-[#344054]')}>
+            City
+            {locationSort === 'none' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-30 shrink-0"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
+            {locationSort === 'asc'  && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
+            {locationSort === 'desc' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M12 5v14M5 12l7 7 7-7"/></svg>}
+          </button>
+          <button type="button" onClick={cycleInclusionSort} className={cn('flex items-center gap-1 text-[12px] font-semibold truncate transition-colors', inclusionSort !== 'none' ? 'text-[#344054]' : 'text-[#414651] hover:text-[#344054]')}>
+            Status
+            {inclusionSort === 'none'          && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"   strokeLinecap="round" strokeLinejoin="round" className="opacity-30 shrink-0"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
+            {inclusionSort === 'included-first' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
+            {inclusionSort === 'excluded-first' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M12 5v14M5 12l7 7 7-7"/></svg>}
+          </button>
+        </div>
+
+        {/* Rows */}
+        <div className="bg-white flex-1 overflow-y-auto pb-6">
+          {filtered.length === 0 && (
+            <div className="flex h-full flex-col items-center justify-center text-center px-6 relative overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-[420px] h-[420px] rounded-full border border-[#f2f4f7] absolute" />
+                <div className="w-[300px] h-[300px] rounded-full border border-[#f2f4f7] absolute" />
+                <div className="w-[180px] h-[180px] rounded-full border border-[#f2f4f7] absolute" />
+              </div>
+              <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-[#e9eaeb] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.1)]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              </div>
+              <p className="relative z-10 text-[15px] font-semibold text-[#101828] mb-1">No listings match the selected filters</p>
+              <p className="relative z-10 text-[13px] text-[#535862] max-w-[280px] leading-snug">Try adjusting your filters to find what you're looking for.</p>
+            </div>
+          )}
+          {filtered.map((listing, i) => (
+            <div
+              key={listing.id}
+              onClick={() => toggleSelect(listing.id)}
+              className={cn(
+                'grid grid-cols-[20px_minmax(120px,2fr)_minmax(88px,1fr)_minmax(88px,1fr)_minmax(100px,1fr)] items-center gap-3 px-4 h-[72px] cursor-pointer',
+                i < filtered.length - 1 ? 'border-b border-[#f2f4f7]' : '',
+                selected.has(listing.id) ? 'bg-[#f8f9fc]' : 'hover:bg-[#fafafa]'
+              )}
+            >
+              <span onClick={e => e.stopPropagation()} className="self-center flex"><Checkbox checked={selected.has(listing.id)} onChange={() => toggleSelect(listing.id)} /></span>
+              <div className="flex items-center gap-3 min-w-0">
+                <img src={listing.img} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = `https://picsum.photos/seed/${listing.id}/80/80` }} />
+                <span className="text-[14px] font-medium text-[#181d27] truncate">{listing.name}</span>
+              </div>
+              <span className="text-[13px] text-[#535862] truncate">{getCountry(listing.location)}</span>
+              <span className="text-[13px] text-[#535862] truncate">{getCity(listing.location)}</span>
+              <span onClick={e => e.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => toggleInclusion(listing.id)}
+                  className={cn(
+                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium border transition-colors whitespace-nowrap',
+                    inclusions[listing.id] === 'included'
+                      ? 'bg-[#ecfdf3] text-[#057647] border-[#abefc6] hover:bg-[#d1fae5]'
+                      : 'bg-[#fff1f3] text-[#c01048] border-[#fecdd6] hover:bg-[#ffe4e8]'
+                  )}
+                >
+                  {inclusions[listing.id] === 'included' ? 'Included' : 'Excluded'}
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
       </div>
 
-      {/* Bulk action bar */}
-      {selectedCount > 0 && (
-        <div className="flex items-center gap-3 mb-3 shrink-0 rounded-lg bg-[#f9fafb] border border-[#e9eaeb] px-4 py-2">
-          <span className="text-[13px] text-[#414651]">{selectedCount} selected</span>
-          <div className="h-4 w-px bg-[#e9eaeb]" />
-          <button
-            type="button"
-            onClick={() => bulkSet('included')}
-            className="text-[13px] font-medium text-[#079455] hover:text-[#057647] transition-colors"
-          >
+      {/* Floating selection bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl bg-[#0c111d] px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
+          <span className="text-[14px] font-medium text-white whitespace-nowrap">{selected.size} selected</span>
+          <div className="w-px h-4 bg-white/20" />
+          <button type="button" onClick={() => bulkSetInclusion('included')} className="inline-flex items-center gap-2 rounded-lg bg-white hover:bg-[#f2f4f7] transition-colors px-3 py-1.5 text-[13px] font-medium text-[#181d27]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
             Include
           </button>
-          <button
-            type="button"
-            onClick={() => bulkSet('excluded')}
-            className="text-[13px] font-medium text-[#d92d20] hover:text-[#b42318] transition-colors"
-          >
+          <button type="button" onClick={() => bulkSetInclusion('excluded')} className="inline-flex items-center gap-2 rounded-lg bg-white hover:bg-[#f2f4f7] transition-colors px-3 py-1.5 text-[13px] font-medium text-[#181d27]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M18 6L6 18M6 6l12 12"/></svg>
             Exclude
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelected(new Set())}
-            className="ml-auto text-[13px] text-[#98a2b3] hover:text-[#667085] transition-colors"
-          >
-            Clear
           </button>
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative mb-3 shrink-0">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98a2b3]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input
-          type="text"
-          placeholder="Filter name"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          className="w-full rounded-lg border border-[#e9eaeb] bg-white py-2 pl-8 pr-3 text-[13px] placeholder:text-[#98a2b3] focus:outline-none focus:ring-2 focus:ring-[#84caff]"
-        />
-      </div>
-
-      {/* Table */}
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-[#e9eaeb]">
-        <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-10 bg-[#f9fafb]">
-            <tr className="border-b border-[#e9eaeb]">
-              <th className="px-4 py-3 w-10">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={el => { if (el) el.indeterminate = someSelected && !allSelected }}
-                  onChange={toggleAll}
-                  className="h-4 w-4 rounded border-[#d0d5dd] accent-[#1570ef] cursor-pointer"
-                />
-              </th>
-              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">Name</th>
-              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">Country</th>
-              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">City</th>
-              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(listing => {
-              const [city, countryCode] = listing.location.split(', ')
-              const country = getCountry(listing.location)
-              const status = statuses[listing.id]
-              const isSelected = selected.has(listing.id)
-
-              return (
-                <tr
-                  key={listing.id}
-                  className={cn(
-                    'border-b border-[#e9eaeb] transition-colors',
-                    isSelected ? 'bg-[#f0f7ff]' : 'hover:bg-[#fafafa]'
-                  )}
-                >
-                  <td className="px-4 py-3 w-10">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleOne(listing.id)}
-                      className="h-4 w-4 rounded border-[#d0d5dd] accent-[#1570ef] cursor-pointer"
-                    />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-3">
-                      <img src={listing.img} alt="" className="h-8 w-8 rounded-md object-cover shrink-0" />
-                      <span className="text-[13px] font-medium text-[#181d27]">{listing.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-[13px] text-[#535861]">{country}</td>
-                  <td className="px-3 py-3 text-[13px] text-[#535861]">{city}</td>
-                  <td className="px-3 py-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleStatus(listing.id)}
-                      className={cn(
-                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors border cursor-pointer',
-                        status === 'included'
-                          ? 'bg-[#ecfdf3] text-[#057647] border-[#abefc6] hover:bg-[#d1fae5]'
-                          : 'bg-[#fff1f3] text-[#c01048] border-[#fecdd6] hover:bg-[#ffe4e8]'
-                      )}
-                    >
-                      {status === 'included' ? 'Included' : 'Excluded'}
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Toast */}
+      {showToast && (
+        <div className={cn('fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-white border border-[#e9eaeb] shadow-[0_8px_24px_rgba(0,0,0,0.12)] px-4 py-3 min-w-[260px] transition-transform duration-300 ease-in-out', toastVisible ? 'translate-x-0' : 'translate-x-[calc(100%+24px)]')}>
+          <img src={`${import.meta.env.BASE_URL}Featured icon outline.svg`} alt="" className="w-[38px] h-[38px] shrink-0" />
+          <span className="text-[14px] font-medium text-[#181d27] flex-1">{toastMessage}</span>
+          <button onClick={dismissToast} className="text-[#98a2b3] hover:text-[#667085] transition-colors ml-1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      )}
+      {showModal && <ListingSelectorModal onClose={() => setShowModal(false)} onAdd={handleAddSpecific} excludeIds={modalExcludeIds} />}
     </div>
   )
 }
