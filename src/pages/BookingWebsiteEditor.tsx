@@ -168,7 +168,12 @@ const BW_NAV: NavItem[] = [
   ]},
 ]
 
-function BWLeftNav({ activeId, onSelect }: { activeId: string; onSelect: (id: string) => void }) {
+function BWLeftNav({ activeId, onSelect, listingsVariant, onToggleVariant }: {
+  activeId: string
+  onSelect: (id: string) => void
+  listingsVariant: 'A' | 'B'
+  onToggleVariant: (v: 'A' | 'B') => void
+}) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
   const toggleGroup = (id: string) => setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }))
@@ -241,21 +246,30 @@ function BWLeftNav({ activeId, onSelect }: { activeId: string; onSelect: (id: st
           )
         })}
       </nav>
-      {/* variant toggle hidden — testing C only
-      <div className="px-3 pt-4 pb-1 border-t border-[#f2f4f7] mt-4 shrink-0">
-        <div className="flex w-full items-center justify-between rounded-lg border border-[#e9eaeb] bg-white px-3 py-1.5">
-          <span className="text-[12px] text-[#c8cdd5]">Actions variant</span>
-          <div className="flex items-center gap-1">
-            {(['A', 'B', 'C'] as const).map(v => (
-              <button key={v} type="button" onClick={() => onToggleVariant(v)}
-                className={cn('flex h-5 w-5 items-center justify-center rounded border text-[11px] font-medium transition-colors',
-                  actionsVariant === v ? 'border-[#d0d5dd] bg-white text-[#344054]' : 'border-transparent text-[#c8cdd5] hover:text-[#98a2b3]'
-                )}>{v}</button>
-            ))}
+      {activeId === 'listings' && (
+        <div className="px-3 pt-4 pb-1 border-t border-[#f2f4f7] mt-4 shrink-0">
+          <div className="flex w-full items-center justify-between rounded-lg border border-[#e9eaeb] bg-white px-3 py-2">
+            <span className="text-[12px] text-[#98a2b3]">Listings variant</span>
+            <div className="flex items-center gap-1">
+              {(['A', 'B'] as const).map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => onToggleVariant(v)}
+                  className={cn(
+                    'flex h-6 w-6 items-center justify-center rounded border text-[11px] font-semibold transition-colors',
+                    listingsVariant === v
+                      ? 'border-[#d0d5dd] bg-[#f9fafb] text-[#344054] shadow-[0_1px_2px_rgba(16,24,40,0.05)]'
+                      : 'border-transparent text-[#c8cdd5] hover:text-[#98a2b3]'
+                  )}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-      */}
+      )}
     </aside>
   )
 }
@@ -1557,6 +1571,177 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
   )
 }
 
+// ─── Listings Section B ───────────────────────────────────────────────────────
+
+type ListingStatus = 'included' | 'excluded'
+
+function ListingsSectionB({ onDirty }: { onDirty?: () => void }) {
+  const [statuses, setStatuses] = useState<Record<string, ListingStatus>>(() =>
+    Object.fromEntries(MOCK_LISTINGS_DATA.map(l => [l.id, 'included']))
+  )
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [filter, setFilter] = useState('')
+
+  const filtered = MOCK_LISTINGS_DATA.filter(l =>
+    l.name.toLowerCase().includes(filter.toLowerCase())
+  )
+  const allSelected = filtered.length > 0 && filtered.every(l => selected.has(l.id))
+  const someSelected = filtered.some(l => selected.has(l.id))
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set())
+    else setSelected(new Set(filtered.map(l => l.id)))
+  }
+  const toggleOne = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  const toggleStatus = (id: string) => {
+    setStatuses(prev => ({ ...prev, [id]: prev[id] === 'included' ? 'excluded' : 'included' }))
+    onDirty?.()
+  }
+  const bulkSet = (status: ListingStatus) => {
+    setStatuses(prev => {
+      const next = { ...prev }
+      selected.forEach(id => { next[id] = status })
+      return next
+    })
+    setSelected(new Set())
+    onDirty?.()
+  }
+
+  const includedCount = Object.values(statuses).filter(s => s === 'included').length
+  const selectedCount = selected.size
+
+  return (
+    <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+      {/* Title row */}
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <h2 className="text-[18px] font-semibold text-[#101828]">
+          Listings
+          <span className="ml-2 text-[14px] font-normal text-[#717680]">({includedCount} included)</span>
+        </h2>
+      </div>
+
+      {/* Bulk action bar */}
+      {selectedCount > 0 && (
+        <div className="flex items-center gap-3 mb-3 shrink-0 rounded-lg bg-[#f9fafb] border border-[#e9eaeb] px-4 py-2">
+          <span className="text-[13px] text-[#414651]">{selectedCount} selected</span>
+          <div className="h-4 w-px bg-[#e9eaeb]" />
+          <button
+            type="button"
+            onClick={() => bulkSet('included')}
+            className="text-[13px] font-medium text-[#079455] hover:text-[#057647] transition-colors"
+          >
+            Include
+          </button>
+          <button
+            type="button"
+            onClick={() => bulkSet('excluded')}
+            className="text-[13px] font-medium text-[#d92d20] hover:text-[#b42318] transition-colors"
+          >
+            Exclude
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="ml-auto text-[13px] text-[#98a2b3] hover:text-[#667085] transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="relative mb-3 shrink-0">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98a2b3]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input
+          type="text"
+          placeholder="Filter name"
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          className="w-full rounded-lg border border-[#e9eaeb] bg-white py-2 pl-8 pr-3 text-[13px] placeholder:text-[#98a2b3] focus:outline-none focus:ring-2 focus:ring-[#84caff]"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-[#e9eaeb]">
+        <table className="w-full border-collapse">
+          <thead className="sticky top-0 z-10 bg-[#f9fafb]">
+            <tr className="border-b border-[#e9eaeb]">
+              <th className="px-4 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={el => { if (el) el.indeterminate = someSelected && !allSelected }}
+                  onChange={toggleAll}
+                  className="h-4 w-4 rounded border-[#d0d5dd] accent-[#1570ef] cursor-pointer"
+                />
+              </th>
+              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">Name</th>
+              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">Country</th>
+              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">City</th>
+              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#414651]">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(listing => {
+              const [city, countryCode] = listing.location.split(', ')
+              const country = getCountry(listing.location)
+              const status = statuses[listing.id]
+              const isSelected = selected.has(listing.id)
+
+              return (
+                <tr
+                  key={listing.id}
+                  className={cn(
+                    'border-b border-[#e9eaeb] transition-colors',
+                    isSelected ? 'bg-[#f0f7ff]' : 'hover:bg-[#fafafa]'
+                  )}
+                >
+                  <td className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleOne(listing.id)}
+                      className="h-4 w-4 rounded border-[#d0d5dd] accent-[#1570ef] cursor-pointer"
+                    />
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-3">
+                      <img src={listing.img} alt="" className="h-8 w-8 rounded-md object-cover shrink-0" />
+                      <span className="text-[13px] font-medium text-[#181d27]">{listing.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-[13px] text-[#535861]">{country}</td>
+                  <td className="px-3 py-3 text-[13px] text-[#535861]">{city}</td>
+                  <td className="px-3 py-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleStatus(listing.id)}
+                      className={cn(
+                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors border cursor-pointer',
+                        status === 'included'
+                          ? 'bg-[#ecfdf3] text-[#057647] border-[#abefc6] hover:bg-[#d1fae5]'
+                          : 'bg-[#fff1f3] text-[#c01048] border-[#fecdd6] hover:bg-[#ffe4e8]'
+                      )}
+                    >
+                      {status === 'included' ? 'Included' : 'Excluded'}
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function PlaceholderContent({ title }: { title: string }) {
   return (
     <div className="flex items-center justify-center h-48 text-[14px] text-[#717680]">
@@ -1571,6 +1756,7 @@ export function BookingWebsiteEditor({ site, onBack }: { site: BookingWebsite; o
   const [activeSection, setActiveSection] = useState('listings')
   const [isDirty, setIsDirty] = useState(false)
   const [status, setStatus] = useState<BWStatus>(site.status)
+  const [listingsVariant, setListingsVariant] = useState<'A' | 'B'>('A')
 
   const iconBtn = 'flex h-8 w-8 items-center justify-center rounded-lg text-[#a4a7ae] hover:text-[#667085] hover:bg-[#f9fafb] transition-colors'
 
@@ -1644,7 +1830,7 @@ export function BookingWebsiteEditor({ site, onBack }: { site: BookingWebsite; o
 
         {/* Body */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          <BWLeftNav activeId={activeSection} onSelect={setActiveSection} />
+          <BWLeftNav activeId={activeSection} onSelect={setActiveSection} listingsVariant={listingsVariant} onToggleVariant={setListingsVariant} />
 
           <div className={cn(
             'min-h-0 min-w-0 flex-1 px-8',
@@ -1657,7 +1843,8 @@ export function BookingWebsiteEditor({ site, onBack }: { site: BookingWebsite; o
                 <DesignSection />
               </div>
             )}
-            {activeSection === 'listings' && <ListingsSection onDirty={() => setIsDirty(true)} />}
+            {activeSection === 'listings' && listingsVariant === 'A' && <ListingsSection onDirty={() => setIsDirty(true)} />}
+            {activeSection === 'listings' && listingsVariant === 'B' && <ListingsSectionB onDirty={() => setIsDirty(true)} />}
             {activeSection.startsWith('pages-') && <PlaceholderContent title="Pages" />}
             {activeSection.startsWith('settings-') && <PlaceholderContent title="Settings" />}
             {activeSection.startsWith('translations-') && <PlaceholderContent title="Translations" />}
