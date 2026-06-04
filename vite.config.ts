@@ -8,6 +8,10 @@ const DEPLOY_BASE = 'guest-hub-prototype-'
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? `/${DEPLOY_BASE}/` : '/',
   plugins: [react()],
+  server: {
+    port: 5175,
+    strictPort: true,
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

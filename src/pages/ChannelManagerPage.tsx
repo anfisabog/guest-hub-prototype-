@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { NAV_ITEMS, indexFromPathname } from '@/lib/navItems'
 import {
   PageShell,
   AccountTable,
@@ -32,16 +33,26 @@ import { RESERVATION_AVATAR_SRC_DETAIL, reservationGuestAvatarUrl } from '@/lib/
 
 export function ChannelManagerPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<'connected' | 'channels'>(
     searchParams.get('tab') === 'channels' ? 'channels' : 'connected'
   )
   const [searchQuery, setSearchQuery] = useState('')
-  const [primaryNavIndex, setPrimaryNavIndex] = useState(() =>
-    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('view') === 'design-system'
-      ? 13
-      : 1
-  )
+  // Derive primary nav index from the URL slug so deep-links (`/calendar`, `/reservations`, …)
+  // mount the right sub-view immediately. `?view=design-system` keeps its legacy escape hatch.
+  const [primaryNavIndex, setPrimaryNavIndex] = useState(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('view') === 'design-system') {
+      return 13
+    }
+    return indexFromPathname(location.pathname)
+  })
+
+  // Sync state when user navigates between sidebar slugs without remounting the page
+  useEffect(() => {
+    const idx = indexFromPathname(location.pathname)
+    setPrimaryNavIndex(idx)
+  }, [location.pathname])
   const [activeReservation, setActiveReservation] = useState<ReservationListItem | null>(null)
   const [activeReview, setActiveReview] = useState<ReviewRecord | null>(null)
   const [reservationStartInEditMode, setReservationStartInEditMode] = useState(false)
@@ -331,13 +342,12 @@ export function ChannelManagerPage() {
   )
 
   const handleSidebarSelect = (index: number) => {
-    if (index === 9) {
-      navigate('/guest-hub')
-      return
-    }
+    // Clear any open sub-panels before switching views
     if (index === 3) setActiveReservation(null)
     if (index === 8) setActiveReview(null)
-    setPrimaryNavIndex(index)
+    // Navigate to the slug — PrimarySidebar already does this too, this stays for safety/legacy
+    const slug = NAV_ITEMS[index]?.slug
+    if (slug) navigate(`/${slug}`)
   }
 
   return (

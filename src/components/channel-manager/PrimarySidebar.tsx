@@ -1,35 +1,6 @@
-import type { ComponentType, SVGProps } from 'react'
-import {
-  BankNote01,
-  Calendar,
-  CalendarCheck02,
-  CreditCardRefresh,
-  File02,
-  Globe02,
-  HomeLine,
-  List,
-  MessageChatSquare,
-  Star01,
-  User01,
-} from '@untitled-ui/icons-react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/cn'
-
-type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
-
-// Index 0–8 = existing pages, Index 9 = Post-booking experience
-const sidebarItems: Array<{ label: string; Icon: IconComponent }> = [
-  { label: 'Overview', Icon: HomeLine },
-  { label: 'Calendar', Icon: Calendar },
-  { label: 'Inbox', Icon: MessageChatSquare },
-  { label: 'Reservation', Icon: CalendarCheck02 },
-  { label: 'Listings', Icon: List },
-  { label: 'Financial Reporting', Icon: BankNote01 },
-  { label: 'Expenses and Extras', Icon: CreditCardRefresh },
-  { label: 'Owner Statements', Icon: File02 },
-  { label: 'Reviews', Icon: Star01 },
-  { label: 'Post-booking experience', Icon: User01 },
-  { label: 'Booking website settings', Icon: Globe02 },
-]
+import { NAV_ITEMS, indexFromPathname } from '@/lib/navItems'
 
 const iconProps = {
   width: 20,
@@ -44,11 +15,24 @@ function BrandMark() {
 }
 
 export interface PrimarySidebarProps {
+  /** Override active index. If omitted, derived from current pathname. */
   activeIndex?: number
+  /** Optional extra handler. Sidebar still navigates by default. */
   onSelectItem?: (index: number) => void
 }
 
-export function PrimarySidebar({ activeIndex = 4, onSelectItem }: PrimarySidebarProps) {
+export function PrimarySidebar({ activeIndex, onSelectItem }: PrimarySidebarProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const effectiveActive = activeIndex ?? indexFromPathname(location.pathname)
+
+  const handleClick = (index: number) => {
+    // Always navigate — guarantees every tab is functional regardless of caller wiring
+    navigate(`/${NAV_ITEMS[index].slug}`)
+    // Still allow optional side-effects from the consumer
+    onSelectItem?.(index)
+  }
+
   return (
     <aside className="sticky top-2 h-[calc(100vh-16px)] w-[72px] shrink-0 self-start px-1 py-1">
       <div className="flex h-full min-h-0 flex-col justify-between overflow-hidden rounded-xl bg-[var(--figma-bg)]">
@@ -62,8 +46,8 @@ export function PrimarySidebar({ activeIndex = 4, onSelectItem }: PrimarySidebar
             aria-label="Primary"
             className="flex min-h-0 flex-1 flex-col items-center gap-0.5 overflow-y-auto overflow-x-hidden px-3 pb-2 [scrollbar-width:thin]"
           >
-            {sidebarItems.map((item, index) => {
-              const active = index === activeIndex
+            {NAV_ITEMS.map((item, index) => {
+              const active = index === effectiveActive
               const { Icon } = item
               return (
                 <button
@@ -71,14 +55,13 @@ export function PrimarySidebar({ activeIndex = 4, onSelectItem }: PrimarySidebar
                   type="button"
                   aria-label={item.label}
                   aria-current={active ? 'page' : undefined}
-                  onClick={() => onSelectItem?.(index)}
+                  onClick={() => handleClick(index)}
                   className={cn(
-                    'flex size-10 shrink-0 items-center justify-center overflow-hidden transition-colors',
+                    'flex size-10 shrink-0 items-center justify-center overflow-hidden transition-colors cursor-pointer',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fd853a] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--figma-bg)]',
-                    /* Figma: active = 40×40 rounded-xl white + shadow; inactive = rounded-md (6px) + 8px padding */
                     active
                       ? 'rounded-xl bg-white p-0'
-                      : 'rounded-[6px] p-2',
+                      : 'rounded-[6px] p-2 hover:bg-white/60',
                   )}
                 >
                   <Icon {...iconProps} />
