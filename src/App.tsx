@@ -8,7 +8,9 @@ import { NAV_ITEMS } from './lib/navItems'
 function BookingWebsitePage() {
   return (
     <PageShell sidebarActiveIndex={10}>
-      <BookingWebsitesView />
+      <div className="flex-1 bg-white rounded-xl flex flex-col min-h-0 overflow-hidden border border-[#eceef2]">
+        <BookingWebsitesView />
+      </div>
     </PageShell>
   )
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react'
-import { ListingsSection as BWListingsSection } from './BookingWebsiteEditor'
+import { ListingsSection as BWListingsSection, BookingWebsiteEditor as BWEditor, type BookingWebsite as BWEditorSite } from './BookingWebsiteEditor'
 import { useNavigate } from 'react-router-dom'
 import { PageShell, PageHeader } from '@/components/channel-manager'
 import { Button } from '@/components/ui'
@@ -256,8 +256,19 @@ function ChooseYourPlanButton() {
 }
 
 export function BookingWebsitesView({ showHeader = true }: { showHeader?: boolean }) {
+  const [editingSite, setEditingSite] = useState<BWEditorSite | null>(null)
+
+  if (editingSite) {
+    return (
+      <BWEditor
+        site={editingSite}
+        onBack={() => setEditingSite(null)}
+      />
+    )
+  }
+
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-white">
       {showHeader && (
         <>
           <div className="flex items-center justify-between px-6 py-3 shrink-0">
@@ -283,7 +294,7 @@ export function BookingWebsitesView({ showHeader = true }: { showHeader?: boolea
           </thead>
           <tbody>
             {BW_MOCK.map(site => (
-              <tr key={site.id} className="h-[72px] border-b border-[#e9eaeb] hover:bg-[#fafafa] transition-colors cursor-pointer">
+              <tr key={site.id} onClick={() => setEditingSite({ id: site.id, name: site.name, status: site.status, website: site.website, listings: site.listings, lastPublished: site.lastPublished })} className="h-[72px] border-b border-[#e9eaeb] hover:bg-[#fafafa] transition-colors cursor-pointer">
                 <td className="px-6 whitespace-nowrap">
                   <p className="text-[14px] font-medium leading-[20px] text-[#181d27]">{site.name}</p>
                 </td>
