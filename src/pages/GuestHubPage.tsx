@@ -255,7 +255,7 @@ function ChooseYourPlanButton() {
   )
 }
 
-function BookingWebsitesView({ showHeader = true }: { showHeader?: boolean }) {
+export function BookingWebsitesView({ showHeader = true }: { showHeader?: boolean }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {showHeader && (

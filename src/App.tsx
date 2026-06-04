@@ -1,15 +1,26 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ChannelManagerProvider } from './context/ChannelManagerContext'
-import { GuestHubPage } from './pages/GuestHubPage'
+import { GuestHubPage, BookingWebsitesView } from './pages/GuestHubPage'
 import { ChannelManagerPage } from './pages/ChannelManagerPage'
+import { PageShell } from './components/channel-manager'
 import { NAV_ITEMS } from './lib/navItems'
+
+function BookingWebsitePage() {
+  return (
+    <PageShell sidebarActiveIndex={10}>
+      <BookingWebsitesView />
+    </PageShell>
+  )
+}
 
 /**
  * Slugs that have their own dedicated page component.
- * Everything else falls through to ChannelManagerPage, which derives the
- * active sub-view from the URL slug (Calendar / Reservation / Reviews / …).
+ * Everything else falls through to ChannelManagerPage.
  */
-const DEDICATED = new Set<string>(['post-booking-experience'])
+const DEDICATED: Record<string, JSX.Element> = {
+  'post-booking-experience': <GuestHubPage />,
+  'booking-website': <BookingWebsitePage />,
+}
 
 export default function App() {
   return (
@@ -25,14 +36,9 @@ export default function App() {
             <Route
               key={item.slug}
               path={`/${item.slug}`}
-              element={
-                DEDICATED.has(item.slug) ? <GuestHubPage /> : <ChannelManagerPage />
-              }
+              element={DEDICATED[item.slug] ?? <ChannelManagerPage />}
             />
           ))}
-
-          {/* Booking-website sub-routes (e.g. settings panels) */}
-          <Route path="/booking-website/*" element={<ChannelManagerPage />} />
 
           {/* Unknown routes → default landing */}
           <Route path="*" element={<Navigate to="/post-booking-experience" replace />} />
