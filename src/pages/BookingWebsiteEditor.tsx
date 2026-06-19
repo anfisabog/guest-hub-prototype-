@@ -1073,7 +1073,6 @@ function CategoriesPanel({
   onRemoveFromCategory,
   onRemoveListingFromCategory,
   onAddListingsToCategory,
-  onReorderCategories,
   onToast,
   onClose,
   compact = false,
@@ -1088,7 +1087,6 @@ function CategoriesPanel({
   onRemoveFromCategory: (categoryId: string, listingIds: string[]) => void
   onRemoveListingFromCategory: (categoryId: string, listingId: string) => void
   onAddListingsToCategory?: (categoryId: string, ids: string[]) => void
-  onReorderCategories?: (newOrder: Category[]) => void
   onToast?: (msg: string) => void
   onClose?: () => void
   compact?: boolean
@@ -1097,8 +1095,7 @@ function CategoriesPanel({
   const [mode, setMode] = useState<'list' | 'creating' | 'editing'>('list')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
-  const dragIndexRef = useRef<number | null>(null)
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
 
   const editingCat = categories.find(c => c.id === editingId)
 
@@ -1179,27 +1176,8 @@ function CategoriesPanel({
           {categories.map((cat, index) => (
             <div
               key={cat.id}
-              draggable={categories.length > 1}
-              onDragStart={() => { if (categories.length > 1) dragIndexRef.current = index }}
-              onDragOver={e => { if (categories.length > 1) { e.preventDefault(); setDragOverIndex(index) } }}
-              onDrop={() => {
-                if (categories.length <= 1) return
-                const from = dragIndexRef.current
-                if (from === null || from === index) { setDragOverIndex(null); return }
-                const reordered = [...categories]
-                const [moved] = reordered.splice(from, 1)
-                reordered.splice(index, 0, moved)
-                onReorderCategories?.(reordered)
-                dragIndexRef.current = null
-                setDragOverIndex(null)
-              }}
-              onDragEnd={() => { dragIndexRef.current = null; setDragOverIndex(null) }}
-              className={cn(
-                'group flex items-center gap-3 px-4 py-3 border-b border-[#f2f4f7] last:border-0 transition-colors',
-                dragOverIndex === index ? 'bg-[#f0f4ff]' : 'hover:bg-[#fafafa]'
-              )}
+              className="group flex items-center gap-3 px-4 py-3 border-b border-[#f2f4f7] last:border-0 transition-colors hover:bg-[#fafafa]"
             >
-              <svg className={cn('shrink-0 text-[#d0d5dd]', categories.length > 1 ? 'cursor-grab active:cursor-grabbing' : 'opacity-30 cursor-default')} width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="8" height="1.5" rx="0.75"/><rect x="4" y="7.25" width="8" height="1.5" rx="0.75"/><rect x="4" y="11.5" width="8" height="1.5" rx="0.75"/></svg>
               <div className="w-3 h-3 rounded-full shrink-0" style={{ background: cat.color }} />
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-medium text-[#181d27] truncate">{cat.name}</p>
@@ -1262,7 +1240,10 @@ function CategoriesPanel({
                   Delete "{cat?.name}"?
                 </h2>
                 <p className="text-[14px] leading-[22px] text-[#535862]">
-                  This tag will be removed and your listings won't be affected. The change goes live on your website once you save.
+                  {cat && cat.listingIds.length > 0
+                    ? `All ${cat.listingIds.length} listing${cat.listingIds.length === 1 ? '' : 's'} will be untagged. This can't be undone. The change goes live on your website once you save.`
+                    : 'This tag will be removed. The change goes live on your website once you save.'
+                  }
                 </p>
               </div>
               <div className="flex gap-3 px-6 pb-6">
@@ -2851,7 +2832,6 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
             onRemoveFromCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: c.listingIds.filter(id => !ids.includes(id)) } : c)); triggerToast(ids.length === 1 ? '1 listing removed from website tag' : `${ids.length} listings removed from website tag`); onDirty?.() }}
             onRemoveListingFromCategory={handleRemoveListingFromCategory}
             onAddListingsToCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: [...new Set([...c.listingIds, ...ids])] } : c)); onDirty?.() }}
-            onReorderCategories={newOrder => setCategories(newOrder)}
             onToast={triggerToast}
             onClose={() => setCategoriesPanelOpen(false)}
           />
@@ -2916,7 +2896,6 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
                 onRemoveFromCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: c.listingIds.filter(id => !ids.includes(id)) } : c)); triggerToast(ids.length === 1 ? '1 listing removed from website tag' : `${ids.length} listings removed from website tag`); onDirty?.() }}
                 onRemoveListingFromCategory={handleRemoveListingFromCategory}
             onAddListingsToCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: [...new Set([...c.listingIds, ...ids])] } : c)); onDirty?.() }}
-                onReorderCategories={newOrder => setCategories(newOrder)}
                 onToast={triggerToast}
                 onClose={() => setCategoriesPanelOpen(false)}
               />

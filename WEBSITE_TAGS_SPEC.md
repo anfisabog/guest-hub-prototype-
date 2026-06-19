@@ -32,7 +32,7 @@ The same panel is reached two ways. Behavior differs only at the *start*.
 
 ### Flow B — From the table header (manage-first)
 1. Nothing selected. User clicks the **Website tags** toggle in the table toolbar → opens the slice.
-2. User creates / edits / reorders / deletes tags. No listings pre-attached.
+2. User creates / edits / deletes tags. No listings pre-attached.
 
 Both flows land in the **same panel** with the **same list/empty/create/edit states** below.
 
@@ -48,7 +48,7 @@ The panel has one of three `mode`s: `list` · `creating` · `editing`.
 
 ### 3.2 `list` — populated
 - Header: title **Website tags** + **New tag** button.
-- One row per tag: drag handle · color dot · name · "{n} listings" / "No listings yet".
+- One row per tag: color dot · name · "{n} listings" / "No listings yet".
 - Row hover (no selection): edit + delete icon buttons.
 - When the table has a bulk selection active, each row shows a `+` (assign selected) or `−` (remove selected, when all selected are already in that tag) affordance instead.
 
@@ -68,7 +68,7 @@ Shared form component. Differences:
 ## 4. Tag form — fields & validation
 
 ### 4.1 Tag name
-- Placeholder: `e.g. Popular choice, Cancel anytime…`
+- Placeholder: `e.g. Popular choice, Best value, Guest favorite`
 - Helper (default): **"Appears on top of the listing photo."**
 - **Hard cap: 16 characters.** Enforce both with `maxLength={16}` and a `.slice(0,16)` guard (covers paste).
   - Rationale: the badge must fit one line on the website card even for long German/Russian words. 16 is the balance point.
@@ -109,29 +109,24 @@ The preset palette in the prototype is hardcoded. **In production, the swatches 
 
 ---
 
-## 6. Drag & reorder
-
-- Tags in the populated list are reorderable by drag (handle on the left).
-- **Disabled when only one tag exists** — handle is non-interactive and dimmed.
-- Reordering updates tag order in state; order is a saved change (see §7).
-
----
-
-## 7. Save / publish / leave — the persistence model
+## 6. Save / publish / leave — the persistence model
 
 This is the spine of the feature. **Nothing reaches the live website until the page is saved/published.**
 
-- Any tag change (create, rename, recolor, reorder, assign, remove listing, delete) marks the **editor page dirty** → the top **Save** button enables.
+- Any tag change (create, rename, recolor, assign, remove listing, delete) marks the **editor page dirty** → the top **Save** button enables.
 - Editing tags is **not** auto-published. Copy must never imply instant live effect (e.g. the delete dialog says changes apply "once you save," not "instantly").
 - **No per-action destructive confirms.** Removing listings from a tag, or deleting an empty tag, happens immediately (with a banner). The only confirmation is leaving with unsaved work.
 - **Leave-without-saving guard (two places):**
   1. **Back arrow** out of a tag form **with unsaved listing-assignment changes** (added/removed listings) → **"Leave without saving?"** / *"Your changes to this tag haven't been saved yet and will be lost."* → [Keep editing] [Leave]. **Name/color-only edits are low-stakes → leave silently, no confirm.**
   2. **Switching editor sections** (left nav) while the page is dirty → equivalent "leave without saving" confirm.
-- **Deleting a tag:** if it has 0 listings, delete immediately (nothing to warn about). If it has listings, the delete dialog explains scope + that it applies on save. No double "are you sure the removal" beyond that.
+- **Deleting a tag — two-case confirm dialog:**
+  - **0 listings:** *"This tag will be removed. The change goes live on your website once you save."* → [Cancel] [Delete tag]
+  - **With listings:** *"All {n} listing(s) will be untagged. This can't be undone. The change goes live on your website once you save."* → [Cancel] [Delete tag]
+  - Both cases fire immediately on confirm (no second confirm). The explicit "can't be undone" + listing count is the full warning for the listings case.
 
 ---
 
-## 8. Banners (toasts) — copy & behavior
+## 7. Banners (toasts) — copy & behavior
 
 Banners confirm every committed action. Behavior:
 - Slide in from the bottom-right; auto-dismiss ~4s; manual dismiss (×).
@@ -153,7 +148,7 @@ Banners confirm every committed action. Behavior:
 
 ---
 
-## 9. The dot badge (table "Website tags" column) — DS gap ⚠️
+## 8. The dot badge (table "Website tags" column) — DS gap ⚠️
 
 The website-tag chip shown in the table uses a **colored dot** matching the tag's custom color.
 
@@ -165,7 +160,7 @@ The website-tag chip shown in the table uses a **colored dot** matching the tag'
 
 ---
 
-## 10. Scope summary for estimation
+## 9. Scope summary for estimation
 
 | Item | Complexity note |
 |------|-----------------|
@@ -174,7 +169,6 @@ The website-tag chip shown in the table uses a **colored dot** matching the tag'
 | Tag form + 16-char cap + counter/error | Standard. |
 | Custom color contrast guard (3:1) | Small, self-contained util. |
 | **Brand-color-derived palette** | **Needs design + algorithm — estimate separately.** |
-| Drag reorder (disabled at 1) | Standard HTML5 DnD. |
 | Save/dirty/leave-confirm model | Cross-cutting; touches editor page state. |
 | Stacking banners + correct counts | Watch the StrictMode pitfall. |
 | **Custom-color dot → new DS tag variant** | **Possible separate scope; fallback = no dot.** |
