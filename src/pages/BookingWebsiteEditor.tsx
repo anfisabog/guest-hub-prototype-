@@ -1139,7 +1139,7 @@ function CategoriesPanel({
           {categories.length > 0 && (
             <Button variant="outline" size="sm" className={cn('gap-1', compact && 'h-7 px-2 text-[12px]')} onClick={() => setMode('creating')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-              New tag
+              New label
             </Button>
           )}
         </div>
@@ -1151,7 +1151,7 @@ function CategoriesPanel({
           <span className="text-[13px] text-[#667085]">{categories.length} listing label{categories.length === 1 ? '' : 's'}</span>
           <Button variant="outline" size="sm" className="gap-1" onClick={() => setMode('creating')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            New tag
+            New label
           </Button>
         </div>
       )}
@@ -1169,7 +1169,7 @@ function CategoriesPanel({
               Group listings under labels like "Popular choice" or "Cancel anytime" so guests can browse with ease.
             </p>
           </div>
-          <Button className="relative z-10" size="sm" onClick={() => setMode('creating')}>New tag</Button>
+          <Button className="relative z-10" size="sm" onClick={() => setMode('creating')}>New label</Button>
         </div>
       ) : (
         <div className="flex flex-col flex-1 overflow-y-auto min-h-0 pb-6">
@@ -2029,7 +2029,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[#d0d5dd] bg-white px-2.5 py-1.5 text-[13px] font-medium text-[#344054] hover:bg-[#f9fafb] transition-colors shadow-[0_1px_2px_rgba(16,24,40,0.05)]"
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                      New tag
+                      New label
                     </button>
                   )}
                 </div>

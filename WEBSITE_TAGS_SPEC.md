@@ -16,7 +16,7 @@
 | **Assigned listings** | The listings currently attached to a given listing label. |
 
 Naming is deliberate and must stay consistent:
-- **New tag** = create. **Add to listing label** = assign listings. **Listing labels** = the panel/open toggle. Never reuse "Add" for creation.
+- **New label** = create. **Add to listing label** = assign listings. **Listing labels** = the panel/open toggle. Never reuse "Add" for creation.
 
 ---
 
@@ -43,11 +43,11 @@ Both flows land in the **same panel** with the **same list/empty/create/edit sta
 The panel has one of three `mode`s: `list` · `creating` · `editing`.
 
 ### 3.1 `list` — empty (zero tags)
-- Centered empty state: concentric rings, title **"Help guests find the right stay"**, subtitle **"Group listings under labels like "Popular choice" or "Cancel anytime" so guests can browse with ease."**, primary **New tag** button.
+- Centered empty state: concentric rings, title **"Help guests find the right stay"**, subtitle **"Group listings under labels like "Popular choice" or "Cancel anytime" so guests can browse with ease."**, primary **New label** button.
 - (A website screenshot will replace the placeholder graphic later — leave room for it.)
 
 ### 3.2 `list` — populated
-- Header: title **Listing labels** + **New tag** button.
+- Header: title **Listing labels** + **New label** button.
 - One row per tag: color dot · name · "{n} listings" / "No listings yet".
 - Row hover (no selection): edit + delete icon buttons.
 - When the table has a bulk selection active, each row shows a `+` (assign selected) or `−` (remove selected, when all selected are already in that tag) affordance instead.
