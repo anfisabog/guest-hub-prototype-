@@ -1101,7 +1101,7 @@ function CategoriesPanel({
 
   if (mode === 'creating') return (
     <CategoryForm
-      title="New website tag"
+      title="New label"
       initialName=""
       initialColor={CATEGORY_COLORS[15]}
       submitLabel="Create"
@@ -1120,7 +1120,7 @@ function CategoriesPanel({
         onEditCategory(editingCat.id, name, color)
         removedIds.forEach(id => onRemoveListingFromCategory(editingCat.id, id))
         if (addedIds.length > 0) onAddListingsToCategory?.(editingCat.id, addedIds)
-        if (removedIds.length > 0) onToast?.(removedIds.length === 1 ? '1 listing removed from website tag' : `${removedIds.length} listings removed from website tag`)
+        if (removedIds.length > 0) onToast?.(removedIds.length === 1 ? '1 listing removed from listing label' : `${removedIds.length} listings removed from listing label`)
         setMode('list')
       }}
       onCancel={() => setMode('list')}
@@ -1134,7 +1134,7 @@ function CategoriesPanel({
   return (
     <div className={cn('flex flex-col overflow-hidden', modalMode ? 'flex-1' : 'w-[313px] h-full shrink-0 rounded-xl border border-[#e9eaeb] bg-white')}>
       {!modalMode && <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#e9eaeb] shrink-0 sticky top-0 z-10 bg-white">
-        <h3 className={cn('font-semibold text-[#414651]', compact ? 'text-[12px]' : 'text-[14px]')}>Website tags</h3>
+        <h3 className={cn('font-semibold text-[#414651]', compact ? 'text-[12px]' : 'text-[14px]')}>Listing labels</h3>
         <div className="flex items-center gap-2">
           {categories.length > 0 && (
             <Button variant="outline" size="sm" className={cn('gap-1', compact && 'h-7 px-2 text-[12px]')} onClick={() => setMode('creating')}>
@@ -1148,7 +1148,7 @@ function CategoriesPanel({
       {/* In modal mode: show Add button in the content area when list is populated */}
       {modalMode && categories.length > 0 && (
         <div className="flex items-center justify-between px-6 py-3 border-b border-[#e9eaeb] shrink-0">
-          <span className="text-[13px] text-[#667085]">{categories.length} website tag{categories.length === 1 ? '' : 's'}</span>
+          <span className="text-[13px] text-[#667085]">{categories.length} listing label{categories.length === 1 ? '' : 's'}</span>
           <Button variant="outline" size="sm" className="gap-1" onClick={() => setMode('creating')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             New tag
@@ -1375,7 +1375,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
     setCategories(prev => [...prev, { id: newId, name, color, listingIds: ids }])
     if (ids.length > 0) {
       setSelected(new Set())
-      triggerToast(ids.length === 1 ? '1 listing added to new website tag' : `${ids.length} listings added to new website tag`)
+      triggerToast(ids.length === 1 ? '1 listing added to new listing label' : `${ids.length} listings added to new listing label`)
     }
     return newId
   }
@@ -1391,7 +1391,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
       ? { ...c, listingIds: [...new Set([...c.listingIds, ...ids])] }
       : c
     ))
-    triggerToast(ids.length === 1 ? '1 listing added to website tag' : `${ids.length} listings added to website tag`)
+    triggerToast(ids.length === 1 ? '1 listing added to listing label' : `${ids.length} listings added to listing label`)
   }
   const handleRemoveListingFromCategory = (categoryId: string, listingId: string) => {
     setCategories(prev => prev.map(c => c.id === categoryId
@@ -1582,7 +1582,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
           </div>
           <div className="px-3">
             <Button variant="outline" size="sm" onClick={() => setShowCategoriesModal(true)}>
-              {categories.length === 0 ? 'New website tag' : 'Website tags'}
+              {categories.length === 0 ? 'New label' : 'Listing labels'}
             </Button>
           </div>
         </div>
@@ -1650,7 +1650,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
             {locationSort === 'desc' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M12 5v14M5 12l7 7 7-7"/></svg>}
           </button>
           <span className="text-[12px] font-semibold text-[#414651]">Tags</span>
-          {categories.length > 0 && listingTab === 'included' && <span className="text-[12px] font-semibold text-[#414651]">Website tags</span>}
+          {categories.length > 0 && listingTab === 'included' && <span className="text-[12px] font-semibold text-[#414651]">Listing labels</span>}
         </div>}
 
         {/* Rows */}
@@ -1862,7 +1862,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
               </svg>
-              Add to website tag
+              Add to listing label
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
                 <path d="M6 9l6 6 6-6"/>
               </svg>
@@ -1872,7 +1872,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                 <div className="py-1">
                   {categories.length === 0 ? (
                     <div className="px-3 py-4 flex flex-col items-center gap-2">
-                      <p className="text-[13px] text-[#667085] text-center">No website tags yet.</p>
+                      <p className="text-[13px] text-[#667085] text-center">No listing labels yet.</p>
                       <button
                         type="button"
                         onClick={() => { setAssignDropdownOpen(false); setShowCategoriesModal(true) }}
@@ -2020,7 +2020,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
               ) : (
                 <div className="flex items-center gap-3">
                   <h2 className="text-[18px] font-semibold text-[#101828]">
-                    {modalView === 'add' ? 'New website tag' : 'Website tags'}
+                    {modalView === 'add' ? 'New label' : 'Listing labels'}
                   </h2>
                   {modalView === 'list' && (
                     <button
@@ -2047,7 +2047,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                 <div className="pb-2">
                   {categories.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 gap-3">
-                      <p className="text-[14px] font-semibold text-[#101828]">No website tags yet</p>
+                      <p className="text-[14px] font-semibold text-[#101828]">No listing labels yet</p>
                       <p className="text-[13px] text-[#667085] text-center max-w-[280px]">Create tags to help guests browse your listings by theme or location.</p>
                       <button
                         type="button"
@@ -2291,9 +2291,9 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
     setCategories(prev => [...prev, { id: newId, name, color, listingIds: ids }])
     // Keep the table selection — user may want to assign the same listings to another tag.
     if (ids.length > 0) {
-      triggerToast(`Website tag "${name}" created with ${ids.length} listing${ids.length === 1 ? '' : 's'}`)
+      triggerToast(`Listing label "${name}" created with ${ids.length} listing${ids.length === 1 ? '' : 's'}`)
     } else {
-      triggerToast(`Website tag "${name}" created`)
+      triggerToast(`Listing label "${name}" created`)
     }
     onDirty?.()
     return newId
@@ -2315,9 +2315,9 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
       : c
     ))
     if (newlyAdded.length === 0) {
-      triggerToast('Already in this website tag')
+      triggerToast('Already in this listing label')
     } else {
-      triggerToast(newlyAdded.length === 1 ? '1 listing added to website tag' : `${newlyAdded.length} listings added to website tag`)
+      triggerToast(newlyAdded.length === 1 ? '1 listing added to listing label' : `${newlyAdded.length} listings added to listing label`)
     }
     onDirty?.()
   }
@@ -2512,7 +2512,7 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
               >
                 {/* tag icon — always left */}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                Website tags
+                Listing labels
                 {/* directional arrow — always right, swaps on state */}
                 <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   {categoriesPanelOpen
@@ -2609,7 +2609,7 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
                         </button>
                       </th>
                       <th className="px-3 py-2.5 text-left align-middle"><span className="text-[12px] font-semibold text-[#414651]">Tags</span></th>
-                      {showWebsiteTags && <th className="px-3 py-2.5 text-left align-middle"><span className="text-[12px] font-semibold text-[#414651]">Website tags</span></th>}
+                      {showWebsiteTags && <th className="px-3 py-2.5 text-left align-middle"><span className="text-[12px] font-semibold text-[#414651]">Listing labels</span></th>}
                     </tr>
                   </thead>
                 )}
@@ -2744,7 +2744,7 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
                 <div className="w-px h-9 bg-white/10 shrink-0" />
                 <button type="button" onClick={() => setCategoriesPanelOpen(v => !v)} className="inline-flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium text-white hover:bg-white/10 transition-colors whitespace-nowrap">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                  Add to website tag
+                  Add to listing label
                 </button>
               </>}
               <div className="w-px h-9 bg-white/10 shrink-0" />
@@ -2829,7 +2829,7 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
             onEditCategory={handleEditCategory}
             onDeleteCategory={handleDeleteCategory}
             onAssignToCategory={handleAssignToCategory}
-            onRemoveFromCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: c.listingIds.filter(id => !ids.includes(id)) } : c)); triggerToast(ids.length === 1 ? '1 listing removed from website tag' : `${ids.length} listings removed from website tag`); onDirty?.() }}
+            onRemoveFromCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: c.listingIds.filter(id => !ids.includes(id)) } : c)); triggerToast(ids.length === 1 ? '1 listing removed from listing label' : `${ids.length} listings removed from listing label`); onDirty?.() }}
             onRemoveListingFromCategory={handleRemoveListingFromCategory}
             onAddListingsToCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: [...new Set([...c.listingIds, ...ids])] } : c)); onDirty?.() }}
             onToast={triggerToast}
@@ -2893,7 +2893,7 @@ export function ListingsSectionB({ onDirty, sliceMode = false }: { onDirty?: () 
                 onEditCategory={handleEditCategory}
                 onDeleteCategory={handleDeleteCategory}
                 onAssignToCategory={handleAssignToCategory}
-                onRemoveFromCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: c.listingIds.filter(id => !ids.includes(id)) } : c)); triggerToast(ids.length === 1 ? '1 listing removed from website tag' : `${ids.length} listings removed from website tag`); onDirty?.() }}
+                onRemoveFromCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: c.listingIds.filter(id => !ids.includes(id)) } : c)); triggerToast(ids.length === 1 ? '1 listing removed from listing label' : `${ids.length} listings removed from listing label`); onDirty?.() }}
                 onRemoveListingFromCategory={handleRemoveListingFromCategory}
             onAddListingsToCategory={(catId, ids) => { setCategories(prev => prev.map(c => c.id === catId ? { ...c, listingIds: [...new Set([...c.listingIds, ...ids])] } : c)); onDirty?.() }}
                 onToast={triggerToast}

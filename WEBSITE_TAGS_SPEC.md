@@ -1,8 +1,8 @@
-# Website Tags — Frontend Implementation Spec
+# Listing Labels — Frontend Implementation Spec
 
-> Scope: the **Website Tags** feature as it lives in the side panel and tag-creation flow of the Booking Website editor (Listings section).
+> Scope: the **Listing Labels** feature as it lives in the side panel and tag-creation flow of the Booking Website editor (Listings section).
 >
-> **Out of scope for this doc:** the listings *table* itself (columns, the "Website tags" column rendering, sticky first column, bulk-bar placement). That is already built. This doc only covers the **tag management slice + creation/edit flows** and the cross-cutting rules (save, banners, accessibility).
+> **Out of scope for this doc:** the listings *table* itself (columns, the "Listing labels" column rendering, sticky first column, bulk-bar placement). That is already built. This doc only covers the **tag management slice + creation/edit flows** and the cross-cutting rules (save, banners, accessibility).
 
 ---
 
@@ -10,13 +10,13 @@
 
 | Term | Meaning |
 |------|---------|
-| **Website tag** | Guest-facing label shown as a colored badge on top of a listing photo on the published booking website (e.g. "Popular choice"). |
-| **Internal tag** | Pre-existing operational label in the "Tags" column. **Different concept** — do not conflate. We always qualify ours as *Website tag* where the two could be confused. |
-| **Slice / panel** | The right-hand "Website tags" panel that slides in beside the listings table. |
-| **Assigned listings** | The listings currently attached to a given website tag. |
+| **Listing label** | Guest-facing label shown as a colored badge on top of a listing photo on the published booking website (e.g. "Popular choice"). |
+| **Internal tag** | Pre-existing operational label in the "Tags" column. **Different concept** — do not conflate. We always qualify ours as *Listing label* where the two could be confused. |
+| **Slice / panel** | The right-hand "Listing labels" panel that slides in beside the listings table. |
+| **Assigned listings** | The listings currently attached to a given listing label. |
 
 Naming is deliberate and must stay consistent:
-- **New tag** = create. **Add to website tag** = assign listings. **Website tags** = the panel/open toggle. Never reuse "Add" for creation.
+- **New tag** = create. **Add to listing label** = assign listings. **Listing labels** = the panel/open toggle. Never reuse "Add" for creation.
 
 ---
 
@@ -26,12 +26,12 @@ The same panel is reached two ways. Behavior differs only at the *start*.
 
 ### Flow A — From a bulk selection (assign-first)
 1. User selects 1+ listings in the table → bulk bar appears.
-2. User clicks **Add to website tag** → opens the Website tags slice.
+2. User clicks **Add to listing label** → opens the Listing labels slice.
 3. From the slice they can assign the selected listings to an existing tag (the `+` per row) or create a new tag (selected listings are pre-attached on create).
 4. **The table selection persists after assigning or creating a tag.** Do *not* clear it — the user may want to assign the same listings to another tag immediately. The banner fires, but the checkboxes stay checked. Selection is only cleared by the user (clear button / deselect).
 
 ### Flow B — From the table header (manage-first)
-1. Nothing selected. User clicks the **Website tags** toggle in the table toolbar → opens the slice.
+1. Nothing selected. User clicks the **Listing labels** toggle in the table toolbar → opens the slice.
 2. User creates / edits / deletes tags. No listings pre-attached.
 
 Both flows land in the **same panel** with the **same list/empty/create/edit states** below.
@@ -47,14 +47,14 @@ The panel has one of three `mode`s: `list` · `creating` · `editing`.
 - (A website screenshot will replace the placeholder graphic later — leave room for it.)
 
 ### 3.2 `list` — populated
-- Header: title **Website tags** + **New tag** button.
+- Header: title **Listing labels** + **New tag** button.
 - One row per tag: color dot · name · "{n} listings" / "No listings yet".
 - Row hover (no selection): edit + delete icon buttons.
 - When the table has a bulk selection active, each row shows a `+` (assign selected) or `−` (remove selected, when all selected are already in that tag) affordance instead.
 
 ### 3.3 `creating` / `editing` — the tag form
 Shared form component. Differences:
-- `creating` header: **New website tag**. `editing` header: **Edit tag**.
+- `creating` header: **New listing label**. `editing` header: **Edit tag**.
 - Fields: **Tag name** input + **color picker**.
 - `editing` additionally shows the **Assigned listings** section (only when the tag has listings — see 3.4).
 
@@ -133,22 +133,22 @@ Banners confirm every committed action. Behavior:
 - **Stack** when multiple actions fire: newest sits above the previous (use `flex-col-reverse`), each with its own timer.
 - ⚠️ **Do not fire toasts from inside a state-updater callback** (React StrictMode double-invokes them → duplicate banners). Compute the message outside the `setState` updater.
 
-### Copy (all qualify "website tag" — explicit by design)
+### Copy (all qualify "listing label" — explicit by design)
 
 | Action | Banner copy |
 |--------|-------------|
-| Create tag (no listings) | `Website tag "{name}" created` |
-| Create tag (with selected listings) | `Website tag "{name}" created with {n} listing(s)` |
-| Assign listings to tag | `{n} listing(s) added to website tag` |
-| Assign — all selected already in tag | `Already in this website tag` |
-| Remove listing(s) from tag | `{n} listing(s) removed from website tag` |
+| Create tag (no listings) | `Listing label "{name}" created` |
+| Create tag (with selected listings) | `Listing label "{name}" created with {n} listing(s)` |
+| Assign listings to tag | `{n} listing(s) added to listing label` |
+| Assign — all selected already in tag | `Already in this listing label` |
+| Remove listing(s) from tag | `{n} listing(s) removed from listing label` |
 | Save page | `Changes saved` |
 
 - **Math must reflect the actual selection.** When assigning, count only *newly* added listings (exclude ones already in the tag). E.g. selecting 3 where 2 are already tagged → "1 listing added," not "3."
 
 ---
 
-## 8. The dot badge (table "Website tags" column) — DS gap ⚠️
+## 8. The dot badge (table "Listing labels" column) — DS gap ⚠️
 
 The website-tag chip shown in the table uses a **colored dot** matching the tag's custom color.
 
