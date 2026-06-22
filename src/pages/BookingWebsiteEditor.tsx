@@ -909,9 +909,9 @@ function CategoryForm({
           <h3 className="text-[14px] font-semibold text-[#101828]">{title}</h3>
         </div>
         <div className="flex flex-col gap-4 px-4 py-5 flex-1 overflow-y-auto">
-          {/* Tag name */}
+          {/* Label name */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12px] font-semibold text-[#344054]">Tag name</label>
+            <label className="text-[12px] font-semibold text-[#344054]">Label name</label>
             <div className="flex items-center gap-1">
               <input
                 autoFocus
@@ -977,7 +977,7 @@ function CategoryForm({
                     {failsContrast ? (
                       <p className="text-[12px] leading-[16px] text-[#b54708]">This color is too light for white text to read clearly. Pick a darker shade.</p>
                     ) : (
-                      <p className="text-[12px] text-[#667085]">The tag text is always white, so pick a shade dark enough to stay readable.</p>
+                      <p className="text-[12px] text-[#667085]">The label text is always white, so pick a shade dark enough to stay readable.</p>
                     )}
                   </div>
                 )}
@@ -985,7 +985,7 @@ function CategoryForm({
             </div>
             {name.length >= 16 ? (
               <p className="text-[12px] leading-[18px] text-[#b54708]">
-                Tag names can be up to 16 characters.
+                Label names can be up to 16 characters.
               </p>
             ) : failsContrast ? (
               <p className="text-[12px] leading-[18px] text-[#b54708]">
@@ -1049,7 +1049,7 @@ function CategoryForm({
           <div className="relative bg-white rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.2)] w-[360px] p-6 flex flex-col gap-4 mx-4">
             <div className="flex flex-col gap-1.5">
               <h3 className="text-[16px] font-semibold text-[#101828]">Leave without saving?</h3>
-              <p className="text-[14px] leading-[20px] text-[#667085]">Your changes to this tag haven't been saved yet and will be lost.</p>
+              <p className="text-[14px] leading-[20px] text-[#667085]">Your changes to this label haven't been saved yet and will be lost.</p>
             </div>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => setShowDiscardConfirm(false)}>Keep editing</Button>
@@ -1112,7 +1112,7 @@ function CategoriesPanel({
 
   if (mode === 'editing' && editingCat) return (
     <CategoryForm
-      title="Edit tag"
+      title="Edit label"
       initialName={editingCat.name}
       initialColor={editingCat.color}
       submitLabel="Save changes"
@@ -1241,8 +1241,8 @@ function CategoriesPanel({
                 </h2>
                 <p className="text-[14px] leading-[22px] text-[#535862]">
                   {cat && cat.listingIds.length > 0
-                    ? `All ${cat.listingIds.length} listing${cat.listingIds.length === 1 ? '' : 's'} will be untagged. This can't be undone. The change goes live on your website once you save.`
-                    : 'This tag will be removed. The change goes live on your website once you save.'
+                    ? `All ${cat.listingIds.length} listing${cat.listingIds.length === 1 ? '' : 's'} will be unlabeled. This can't be undone. The change goes live on your website once you save.`
+                    : 'This label will be removed. The change goes live on your website once you save.'
                   }
                 </p>
               </div>
@@ -1254,7 +1254,7 @@ function CategoriesPanel({
                   className="flex-1 bg-[#d92d20] hover:bg-[#b42318] border-[#d92d20] hover:border-[#b42318]"
                   onClick={() => { onDeleteCategory(pendingDeleteId); setPendingDeleteId(null) }}
                 >
-                  Delete tag
+                  Delete label
                 </Button>
               </div>
             </div>
@@ -1878,7 +1878,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                         onClick={() => { setAssignDropdownOpen(false); setShowCategoriesModal(true) }}
                         className="text-[13px] font-medium text-[#344054] hover:text-[#101828] transition-colors"
                       >
-                        Create your first tag →
+                        Create your first label →
                       </button>
                     </div>
                   ) : (
@@ -2015,7 +2015,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
                   </button>
-                  <h2 className="text-[18px] font-semibold text-[#101828]">Edit tag</h2>
+                  <h2 className="text-[18px] font-semibold text-[#101828]">Edit label</h2>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
@@ -2054,7 +2054,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                         onClick={() => { setModalCategoryName(''); setModalCategoryColor('#1570ef'); setModalView('add') }}
                         className="rounded-lg bg-[#344054] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#1d2939] transition-colors"
                       >
-                        Create your first tag →
+                        Create your first label →
                       </button>
                     </div>
                   ) : (
@@ -2100,7 +2100,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                       />
                     ))}
                   </div>
-                  <p className="text-[12px] text-[#667085] mb-3">Color appears on your booking website next to the tag name.</p>
+                  <p className="text-[12px] text-[#667085] mb-3">Color appears on your booking website next to the label name.</p>
                   <div className="flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2.5 focus-within:border-[#344054] focus-within:ring-1 focus-within:ring-[#344054] transition-colors">
                     <span className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/10" style={{ backgroundColor: modalCategoryColor }} />
                     <input
@@ -2114,7 +2114,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                           setModalView('list')
                         }
                       }}
-                      placeholder="Tag name"
+                      placeholder="Label name"
                       className="flex-1 text-[14px] text-[#344054] placeholder-[#98a2b3] outline-none bg-transparent"
                       autoFocus
                     />
@@ -2132,7 +2132,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                 const assignedListings = MOCK_LISTINGS_DATA.filter(l => editingCat.listingIds.includes(l.id))
                 return (
                   <div className="pb-2">
-                    <p className="text-[13px] font-semibold text-[#344054] mb-3">Tag name</p>
+                    <p className="text-[13px] font-semibold text-[#344054] mb-3">Label name</p>
                     <div className="flex flex-wrap gap-2 mb-1.5">
                       {CATEGORY_COLORS.map(c => (
                         <button key={c} type="button" onClick={() => setModalEditColor(c)}
@@ -2141,7 +2141,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                         />
                       ))}
                     </div>
-                    <p className="text-[12px] text-[#667085] mb-3">Color appears on your booking website next to the tag name.</p>
+                    <p className="text-[12px] text-[#667085] mb-3">Color appears on your booking website next to the label name.</p>
                     <div className="flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2.5 focus-within:border-[#344054] focus-within:ring-1 focus-within:ring-[#344054] transition-colors">
                       <span className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/10" style={{ backgroundColor: modalEditColor }} />
                       <input
@@ -2155,7 +2155,7 @@ export function ListingsSection({ onDirty }: { onDirty?: () => void }) {
                             setModalView('list')
                           }
                         }}
-                        placeholder="Tag name"
+                        placeholder="Label name"
                         className="flex-1 text-[14px] text-[#344054] placeholder-[#98a2b3] outline-none bg-transparent"
                         autoFocus
                       />
